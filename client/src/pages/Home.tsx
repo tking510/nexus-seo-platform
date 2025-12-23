@@ -12,7 +12,6 @@ import {
   TrendingDown,
   Search,
   Globe,
-  Link2,
   Brain,
   AlertCircle,
   CheckCircle,
@@ -116,7 +115,7 @@ function StatCard({ title, value, change, icon: Icon, color, suffix = "" }: Stat
           {isPositive ? "+" : ""}
           {change}%
         </span>
-        <span className="text-xs text-muted-foreground">vs last month</span>
+        <span className="text-xs text-muted-foreground">前月比</span>
       </div>
 
       {/* Decorative gradient line */}
@@ -143,20 +142,20 @@ function TrafficChart() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-display font-bold text-foreground">
-            Traffic Overview
+            トラフィック概要
           </h3>
           <p className="text-sm text-muted-foreground font-mono">
-            Organic vs AI-Referred Traffic
+            オーガニック vs AI経由トラフィック
           </p>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-[#8b5cf6]" />
-            <span className="text-xs text-muted-foreground font-mono">Organic</span>
+            <span className="text-xs text-muted-foreground font-mono">オーガニック</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-[#22d3ee]" />
-            <span className="text-xs text-muted-foreground font-mono">AI-Referred</span>
+            <span className="text-xs text-muted-foreground font-mono">AI経由</span>
           </div>
         </div>
       </div>
@@ -228,10 +227,10 @@ function AIPlatformChart() {
     >
       <div className="mb-4">
         <h3 className="text-lg font-display font-bold text-foreground">
-          AI Platform Distribution
+          AIプラットフォーム分布
         </h3>
         <p className="text-sm text-muted-foreground font-mono">
-          Share of Model Citations
+          モデル引用シェア
         </p>
       </div>
       <div className="h-[200px]">
@@ -292,6 +291,42 @@ function RecentAlerts() {
     }
   };
 
+  const getAlertTitle = (title: string) => {
+    const translations: Record<string, string> = {
+      "Ranking Improved": "順位上昇",
+      "New AI Citation": "新規AI引用",
+      "Ranking Drop": "順位下落",
+      "New Backlink": "新規被リンク",
+    };
+    return translations[title] || title;
+  };
+
+  const getAlertMessage = (message: string) => {
+    if (message.includes("moved from")) {
+      return message.replace("moved from", "が").replace("to", "位から").replace("on Google", "位に上昇（Google）");
+    }
+    if (message.includes("was cited by")) {
+      return message.replace("Your content was cited by", "").replace("for", "があなたのコンテンツを引用：");
+    }
+    if (message.includes("dropped from")) {
+      return message.replace("dropped from", "が").replace("to", "位から").replace("位に下落", "位に下落");
+    }
+    if (message.includes("High DR backlink")) {
+      return message.replace("High DR backlink acquired from", "高DRの被リンクを獲得：");
+    }
+    return message;
+  };
+
+  const getTimeJapanese = (time: string) => {
+    const translations: Record<string, string> = {
+      "2 hours ago": "2時間前",
+      "5 hours ago": "5時間前",
+      "1 day ago": "1日前",
+      "2 days ago": "2日前",
+    };
+    return translations[time] || time;
+  };
+
   return (
     <motion.div
       variants={itemVariants}
@@ -303,10 +338,10 @@ function RecentAlerts() {
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-display font-bold text-foreground">
-          Recent Alerts
+          最近のアラート
         </h3>
         <button className="text-xs text-[#8b5cf6] font-mono hover:underline">
-          View All
+          すべて表示
         </button>
       </div>
       <div className="space-y-3">
@@ -318,14 +353,14 @@ function RecentAlerts() {
             {getAlertIcon(alert.type)}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">
-                {alert.title}
+                {getAlertTitle(alert.title)}
               </p>
               <p className="text-xs text-muted-foreground truncate">
-                {alert.message}
+                {getAlertMessage(alert.message)}
               </p>
             </div>
-            <span className="text-[10px] text-muted-foreground font-mono whitespace-nowrap">
-              {alert.time}
+            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+              {getTimeJapanese(alert.time)}
             </span>
           </div>
         ))}
@@ -346,10 +381,10 @@ function TopKeywords() {
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-display font-bold text-foreground">
-          Top Performing Keywords
+          上位パフォーマンスキーワード
         </h3>
         <button className="flex items-center gap-1 text-xs text-[#8b5cf6] font-mono hover:underline">
-          View All <ArrowUpRight className="w-3 h-3" />
+          すべて表示 <ArrowUpRight className="w-3 h-3" />
         </button>
       </div>
       <div className="overflow-x-auto">
@@ -357,16 +392,16 @@ function TopKeywords() {
           <thead>
             <tr className="border-b border-border/50">
               <th className="text-left text-xs text-muted-foreground font-mono uppercase tracking-wider py-3">
-                Keyword
+                キーワード
               </th>
               <th className="text-right text-xs text-muted-foreground font-mono uppercase tracking-wider py-3">
-                Volume
+                検索ボリューム
               </th>
               <th className="text-right text-xs text-muted-foreground font-mono uppercase tracking-wider py-3">
-                KD
+                難易度
               </th>
               <th className="text-right text-xs text-muted-foreground font-mono uppercase tracking-wider py-3">
-                AI Visibility
+                AI可視性
               </th>
             </tr>
           </thead>
@@ -459,15 +494,15 @@ export default function Home() {
             <div className="flex items-center gap-2 mb-2">
               <Zap className="w-5 h-5 text-[#8b5cf6]" />
               <span className="text-xs font-mono text-[#8b5cf6] uppercase tracking-widest">
-                Intelligence Dashboard
+                インテリジェンス ダッシュボード
               </span>
             </div>
             <h1 className="text-3xl font-display font-bold text-foreground mb-2">
-              Welcome to <span className="text-[#8b5cf6] neon-text-violet">Nexus</span>
+              <span className="text-[#8b5cf6] neon-text-violet">Nexus</span>へようこそ
             </h1>
             <p className="text-muted-foreground max-w-2xl">
-              Your unified command center for SEO and Generative Engine Optimization. 
-              Monitor traditional search rankings alongside AI visibility metrics in real-time.
+              SEOと生成エンジン最適化のための統合コマンドセンター。
+              従来の検索順位とAI可視性指標をリアルタイムで監視できます。
             </p>
           </div>
         </motion.div>
@@ -475,21 +510,21 @@ export default function Home() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            title="Tracked Keywords"
+            title="トラッキング中のキーワード"
             value={dashboardStats.totalKeywords}
             change={dashboardStats.keywordsChange}
             icon={Search}
             color="#8b5cf6"
           />
           <StatCard
-            title="Avg. Position"
+            title="平均順位"
             value={dashboardStats.avgPosition}
             change={dashboardStats.positionChange}
             icon={TrendingUp}
             color="#22d3ee"
           />
           <StatCard
-            title="AI Visibility"
+            title="AI可視性"
             value={dashboardStats.aiVisibility}
             change={dashboardStats.aiVisibilityChange}
             icon={Brain}
@@ -497,7 +532,7 @@ export default function Home() {
             suffix="%"
           />
           <StatCard
-            title="Domain Rating"
+            title="ドメインレーティング"
             value={dashboardStats.domainRating}
             change={dashboardStats.drChange}
             icon={Globe}

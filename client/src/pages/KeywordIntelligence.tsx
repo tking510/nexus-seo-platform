@@ -12,14 +12,11 @@ import {
   Search,
   Filter,
   Download,
-  TrendingUp,
-  TrendingDown,
   Sparkles,
   Target,
   DollarSign,
   BarChart3,
   Brain,
-  Bot,
 } from "lucide-react";
 import {
   AreaChart,
@@ -115,13 +112,13 @@ function KeywordDetailPanel({ keyword }: { keyword: KeywordData | null }) {
   if (!keyword) {
     return (
       <div className="h-full flex items-center justify-center text-muted-foreground">
-        <p className="text-sm font-mono">Select a keyword to view details</p>
+        <p className="text-sm font-mono">キーワードを選択して詳細を表示</p>
       </div>
     );
   }
 
   const trendChartData = keyword.trend.map((value, index) => ({
-    month: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][index],
+    month: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"][index],
     volume: value,
   }));
 
@@ -130,6 +127,16 @@ function KeywordDetailPanel({ keyword }: { keyword: KeywordData | null }) {
     { name: "Perplexity", value: keyword.aiVisibility.perplexity, color: "#22d3ee" },
     { name: "Gemini", value: keyword.aiVisibility.gemini, color: "#ec4899" },
   ];
+
+  const getIntentLabel = (intent: string) => {
+    const labels: Record<string, string> = {
+      transactional: "取引型",
+      commercial: "商業型",
+      informational: "情報型",
+      navigational: "ナビゲーション型",
+    };
+    return labels[intent] || intent;
+  };
 
   return (
     <div className="space-y-6">
@@ -154,7 +161,7 @@ function KeywordDetailPanel({ keyword }: { keyword: KeywordData | null }) {
                 : "bg-[#8b5cf6]/20 text-[#8b5cf6]"
             )}
           >
-            {keyword.intent}
+            {getIntentLabel(keyword.intent)}
           </span>
           {keyword.serpFeatures.map((feature) => (
             <span
@@ -172,7 +179,7 @@ function KeywordDetailPanel({ keyword }: { keyword: KeywordData | null }) {
         <div className="p-4 rounded-lg bg-white/5 border border-border/50">
           <div className="flex items-center gap-2 mb-1">
             <BarChart3 className="w-4 h-4 text-[#8b5cf6]" />
-            <span className="text-xs text-muted-foreground font-mono">Search Volume</span>
+            <span className="text-xs text-muted-foreground font-mono">検索ボリューム</span>
           </div>
           <p className="text-2xl font-display font-bold text-foreground">
             {keyword.searchVolume.toLocaleString()}
@@ -181,7 +188,7 @@ function KeywordDetailPanel({ keyword }: { keyword: KeywordData | null }) {
         <div className="p-4 rounded-lg bg-white/5 border border-border/50">
           <div className="flex items-center gap-2 mb-1">
             <Target className="w-4 h-4 text-[#22d3ee]" />
-            <span className="text-xs text-muted-foreground font-mono">Keyword Difficulty</span>
+            <span className="text-xs text-muted-foreground font-mono">キーワード難易度</span>
           </div>
           <p
             className={cn(
@@ -199,7 +206,7 @@ function KeywordDetailPanel({ keyword }: { keyword: KeywordData | null }) {
         <div className="p-4 rounded-lg bg-white/5 border border-border/50">
           <div className="flex items-center gap-2 mb-1">
             <DollarSign className="w-4 h-4 text-[#ec4899]" />
-            <span className="text-xs text-muted-foreground font-mono">CPC</span>
+            <span className="text-xs text-muted-foreground font-mono">クリック単価</span>
           </div>
           <p className="text-2xl font-display font-bold text-foreground">
             ${keyword.cpc.toFixed(2)}
@@ -208,7 +215,7 @@ function KeywordDetailPanel({ keyword }: { keyword: KeywordData | null }) {
         <div className="p-4 rounded-lg bg-white/5 border border-border/50">
           <div className="flex items-center gap-2 mb-1">
             <Brain className="w-4 h-4 text-[#22c55e]" />
-            <span className="text-xs text-muted-foreground font-mono">AI Visibility</span>
+            <span className="text-xs text-muted-foreground font-mono">AI可視性</span>
           </div>
           <p className="text-2xl font-display font-bold text-[#22c55e]">
             {Math.round(
@@ -224,7 +231,7 @@ function KeywordDetailPanel({ keyword }: { keyword: KeywordData | null }) {
       {/* Trend Chart */}
       <div>
         <h4 className="text-sm font-mono text-muted-foreground mb-3">
-          12-Month Search Volume Trend
+          12ヶ月間の検索ボリューム推移
         </h4>
         <div className="h-[180px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -269,7 +276,7 @@ function KeywordDetailPanel({ keyword }: { keyword: KeywordData | null }) {
       {/* AI Visibility Breakdown */}
       <div>
         <h4 className="text-sm font-mono text-muted-foreground mb-3">
-          AI Platform Visibility
+          AIプラットフォーム別可視性
         </h4>
         <div className="h-[150px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -352,15 +359,15 @@ export default function KeywordIntelligence() {
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-5 h-5 text-[#8b5cf6]" />
               <span className="text-xs font-mono text-[#8b5cf6] uppercase tracking-widest">
-                Keyword Intelligence
+                キーワード インテリジェンス
               </span>
             </div>
             <h1 className="text-3xl font-display font-bold text-foreground mb-2">
-              SEO + <span className="text-[#22d3ee]">LLMO</span> Analysis
+              SEO + <span className="text-[#22d3ee]">LLMO</span> 分析
             </h1>
             <p className="text-muted-foreground max-w-2xl">
-              Track traditional SEO metrics alongside AI visibility scores. Understand how your
-              keywords perform across Google and generative AI platforms.
+              従来のSEO指標とAI可視性スコアを同時にトラッキング。
+              GoogleおよびAIプラットフォームでのキーワードパフォーマンスを把握できます。
             </p>
           </div>
         </motion.div>
@@ -371,7 +378,7 @@ export default function KeywordIntelligence() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search keywords..."
+              placeholder="キーワードを検索..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 bg-white/5 border-border/50 font-mono"
@@ -379,11 +386,11 @@ export default function KeywordIntelligence() {
           </div>
           <Button variant="outline" className="gap-2">
             <Filter className="w-4 h-4" />
-            Filters
+            フィルター
           </Button>
           <Button variant="outline" className="gap-2">
             <Download className="w-4 h-4" />
-            Export
+            エクスポート
           </Button>
         </motion.div>
 
@@ -403,22 +410,22 @@ export default function KeywordIntelligence() {
                 <thead>
                   <tr className="border-b border-border/50">
                     <th className="text-left text-xs text-muted-foreground font-mono uppercase tracking-wider py-3 px-2">
-                      Keyword
+                      キーワード
                     </th>
                     <th className="text-right text-xs text-muted-foreground font-mono uppercase tracking-wider py-3 px-2">
-                      Volume
+                      ボリューム
                     </th>
                     <th className="text-right text-xs text-muted-foreground font-mono uppercase tracking-wider py-3 px-2">
-                      KD
+                      難易度
                     </th>
                     <th className="text-right text-xs text-muted-foreground font-mono uppercase tracking-wider py-3 px-2">
                       CPC
                     </th>
                     <th className="text-center text-xs text-muted-foreground font-mono uppercase tracking-wider py-3 px-2">
-                      Trend
+                      トレンド
                     </th>
                     <th className="text-left text-xs text-muted-foreground font-mono uppercase tracking-wider py-3 px-2">
-                      AI Visibility
+                      AI可視性
                     </th>
                   </tr>
                 </thead>

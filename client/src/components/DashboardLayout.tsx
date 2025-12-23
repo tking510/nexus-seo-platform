@@ -30,26 +30,26 @@ const navItems = [
   {
     href: "/",
     icon: LayoutDashboard,
-    label: "Dashboard",
-    description: "Overview & Analytics",
+    label: "ダッシュボード",
+    description: "概要と分析",
   },
   {
     href: "/keywords",
     icon: Search,
-    label: "Keyword Intelligence",
-    description: "SEO + LLMO Analysis",
+    label: "キーワード分析",
+    description: "SEO + LLMO 分析",
   },
   {
     href: "/domains",
     icon: Globe,
-    label: "Domain Explorer",
-    description: "Backlinks & AI Audit",
+    label: "ドメイン調査",
+    description: "被リンク & AI監査",
   },
   {
     href: "/rank-tracking",
     icon: TrendingUp,
-    label: "Rank Tracking",
-    description: "Hybrid Monitoring",
+    label: "順位トラッキング",
+    description: "ハイブリッド監視",
   },
 ];
 
@@ -102,7 +102,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     NEXUS
                   </h1>
                   <p className="text-[10px] text-muted-foreground font-mono tracking-widest">
-                    SEO & LLMO INTEL
+                    SEO & LLMO インテル
                   </p>
                 </motion.div>
               )}
@@ -183,13 +183,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <div className="flex items-center gap-2 mb-2">
                 <Brain className="w-4 h-4 text-[#22d3ee]" />
                 <span className="text-xs font-mono text-muted-foreground">
-                  AI ENGINE STATUS
+                  AIエンジン状態
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="status-dot success" />
                 <span className="text-xs text-[#22c55e] font-mono">
-                  ALL SYSTEMS OPERATIONAL
+                  全システム稼働中
                 </span>
               </div>
             </div>
@@ -228,7 +228,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search keywords, domains, or metrics..."
+                  placeholder="キーワード、ドメイン、指標を検索..."
                   className="w-full h-10 pl-10 pr-4 rounded-lg bg-white/5 border border-border/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#8b5cf6]/50 focus:ring-1 focus:ring-[#8b5cf6]/50 transition-all font-mono"
                 />
               </div>

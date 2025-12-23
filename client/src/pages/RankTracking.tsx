@@ -17,7 +17,6 @@ import {
   Bell,
   CheckCircle,
   XCircle,
-  AlertTriangle,
   Bot,
   Globe,
   ArrowUpRight,
@@ -121,9 +120,9 @@ function AICitationBadges({ citations }: { citations: { chatgpt: boolean; perple
 
 function SentimentBadge({ sentiment }: { sentiment: "positive" | "neutral" | "negative" }) {
   const config = {
-    positive: { icon: CheckCircle, color: "#22c55e", label: "Positive" },
-    neutral: { icon: Minus, color: "#f59e0b", label: "Neutral" },
-    negative: { icon: XCircle, color: "#ef4444", label: "Negative" },
+    positive: { icon: CheckCircle, color: "#22c55e", label: "ポジティブ" },
+    neutral: { icon: Minus, color: "#f59e0b", label: "ニュートラル" },
+    negative: { icon: XCircle, color: "#ef4444", label: "ネガティブ" },
   };
 
   const { icon: Icon, color, label } = config[sentiment];
@@ -163,7 +162,7 @@ function RankingDetailChart({ ranking }: { ranking: RankingData }) {
             stroke="rgba(255,255,255,0.3)"
             tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 10, fontFamily: "JetBrains Mono" }}
             label={{
-              value: "Google Rank",
+              value: "Google順位",
               angle: -90,
               position: "insideLeft",
               fill: "rgba(255,255,255,0.5)",
@@ -177,7 +176,7 @@ function RankingDetailChart({ ranking }: { ranking: RankingData }) {
             stroke="rgba(255,255,255,0.3)"
             tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 10, fontFamily: "JetBrains Mono" }}
             label={{
-              value: "AI Mentions",
+              value: "AI言及",
               angle: 90,
               position: "insideRight",
               fill: "rgba(255,255,255,0.5)",
@@ -197,7 +196,7 @@ function RankingDetailChart({ ranking }: { ranking: RankingData }) {
             yAxisId="left"
             type="monotone"
             dataKey="rank"
-            name="Google Rank"
+            name="Google順位"
             stroke="#8b5cf6"
             strokeWidth={2}
             dot={{ fill: "#8b5cf6", strokeWidth: 0 }}
@@ -206,7 +205,7 @@ function RankingDetailChart({ ranking }: { ranking: RankingData }) {
             yAxisId="right"
             type="monotone"
             dataKey="aiMentions"
-            name="AI Mentions"
+            name="AI言及"
             stroke="#22d3ee"
             strokeWidth={2}
             dot={{ fill: "#22d3ee", strokeWidth: 0 }}
@@ -264,15 +263,15 @@ export default function RankTracking() {
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-5 h-5 text-[#ec4899]" />
               <span className="text-xs font-mono text-[#ec4899] uppercase tracking-widest">
-                Hybrid Rank Tracking
+                ハイブリッド順位トラッキング
               </span>
             </div>
             <h1 className="text-3xl font-display font-bold text-foreground mb-2">
-              Google + <span className="text-[#ec4899]">AI Search</span> Rankings
+              Google + <span className="text-[#ec4899]">AI検索</span> ランキング
             </h1>
             <p className="text-muted-foreground max-w-2xl">
-              Monitor your rankings across traditional search engines and AI-powered search
-              platforms. Get alerts when your visibility changes significantly.
+              従来の検索エンジンとAI検索プラットフォーム全体でのランキングを監視。
+              可視性が大きく変化した際にアラートを受け取れます。
             </p>
           </div>
         </motion.div>
@@ -289,7 +288,7 @@ export default function RankTracking() {
           >
             <div className="flex items-center gap-2 mb-1">
               <Globe className="w-4 h-4 text-[#8b5cf6]" />
-              <span className="text-xs text-muted-foreground font-mono">Avg. Position</span>
+              <span className="text-xs text-muted-foreground font-mono">平均順位</span>
             </div>
             <p className="text-2xl font-display font-bold text-[#8b5cf6]">{avgRank}</p>
           </motion.div>
@@ -304,7 +303,7 @@ export default function RankTracking() {
           >
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp className="w-4 h-4 text-[#22c55e]" />
-              <span className="text-xs text-muted-foreground font-mono">Improved</span>
+              <span className="text-xs text-muted-foreground font-mono">上昇</span>
             </div>
             <p className="text-2xl font-display font-bold text-[#22c55e]">{improved}</p>
           </motion.div>
@@ -319,7 +318,7 @@ export default function RankTracking() {
           >
             <div className="flex items-center gap-2 mb-1">
               <TrendingDown className="w-4 h-4 text-[#ef4444]" />
-              <span className="text-xs text-muted-foreground font-mono">Declined</span>
+              <span className="text-xs text-muted-foreground font-mono">下落</span>
             </div>
             <p className="text-2xl font-display font-bold text-[#ef4444]">{declined}</p>
           </motion.div>
@@ -334,7 +333,7 @@ export default function RankTracking() {
           >
             <div className="flex items-center gap-2 mb-1">
               <Bot className="w-4 h-4 text-[#22d3ee]" />
-              <span className="text-xs text-muted-foreground font-mono">AI Cited</span>
+              <span className="text-xs text-muted-foreground font-mono">AI引用</span>
             </div>
             <p className="text-2xl font-display font-bold text-[#22d3ee]">{aiCited}</p>
           </motion.div>
@@ -346,7 +345,7 @@ export default function RankTracking() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search tracked keywords..."
+              placeholder="トラッキング中のキーワードを検索..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 bg-white/5 border-border/50 font-mono"
@@ -354,11 +353,11 @@ export default function RankTracking() {
           </div>
           <Button variant="outline" className="gap-2">
             <Filter className="w-4 h-4" />
-            Filters
+            フィルター
           </Button>
           <Button variant="outline" className="gap-2">
             <Bell className="w-4 h-4" />
-            Alerts
+            アラート
           </Button>
         </motion.div>
 
@@ -376,16 +375,16 @@ export default function RankTracking() {
             <Tabs defaultValue="all" className="w-full">
               <TabsList className="mb-4 bg-white/5">
                 <TabsTrigger value="all" className="font-mono text-xs">
-                  All Keywords
+                  すべて
                 </TabsTrigger>
                 <TabsTrigger value="improved" className="font-mono text-xs">
-                  Improved
+                  上昇
                 </TabsTrigger>
                 <TabsTrigger value="declined" className="font-mono text-xs">
-                  Declined
+                  下落
                 </TabsTrigger>
                 <TabsTrigger value="ai-cited" className="font-mono text-xs">
-                  AI Cited
+                  AI引用
                 </TabsTrigger>
               </TabsList>
 
@@ -395,19 +394,19 @@ export default function RankTracking() {
                     <thead>
                       <tr className="border-b border-border/50">
                         <th className="text-left text-xs text-muted-foreground font-mono uppercase tracking-wider py-3">
-                          Keyword
+                          キーワード
                         </th>
                         <th className="text-center text-xs text-muted-foreground font-mono uppercase tracking-wider py-3">
                           Google
                         </th>
                         <th className="text-center text-xs text-muted-foreground font-mono uppercase tracking-wider py-3">
-                          Change
+                          変動
                         </th>
                         <th className="text-center text-xs text-muted-foreground font-mono uppercase tracking-wider py-3">
-                          AI Citations
+                          AI引用
                         </th>
                         <th className="text-center text-xs text-muted-foreground font-mono uppercase tracking-wider py-3">
-                          Sentiment
+                          センチメント
                         </th>
                       </tr>
                     </thead>
@@ -469,7 +468,7 @@ export default function RankTracking() {
                 <div className="text-center py-8 text-muted-foreground">
                   <TrendingUp className="w-8 h-8 mx-auto mb-2 text-[#22c55e]" />
                   <p className="font-mono text-sm">
-                    {improved} keywords improved in rankings
+                    {improved}件のキーワードが順位上昇
                   </p>
                 </div>
               </TabsContent>
@@ -478,7 +477,7 @@ export default function RankTracking() {
                 <div className="text-center py-8 text-muted-foreground">
                   <TrendingDown className="w-8 h-8 mx-auto mb-2 text-[#ef4444]" />
                   <p className="font-mono text-sm">
-                    {declined} keywords declined in rankings
+                    {declined}件のキーワードが順位下落
                   </p>
                 </div>
               </TabsContent>
@@ -487,7 +486,7 @@ export default function RankTracking() {
                 <div className="text-center py-8 text-muted-foreground">
                   <Bot className="w-8 h-8 mx-auto mb-2 text-[#22d3ee]" />
                   <p className="font-mono text-sm">
-                    {aiCited} keywords cited by AI platforms
+                    {aiCited}件のキーワードがAIプラットフォームで引用
                   </p>
                 </div>
               </TabsContent>
@@ -525,21 +524,21 @@ export default function RankTracking() {
                     <p className="text-2xl font-display font-bold text-[#8b5cf6]">
                       #{selectedRanking.googleRank}
                     </p>
-                    <p className="text-xs text-muted-foreground font-mono">Google Rank</p>
+                    <p className="text-xs text-muted-foreground font-mono">Google順位</p>
                   </div>
                   <div className="p-4 rounded-lg bg-white/5 border border-border/50 text-center">
                     <Bot className="w-5 h-5 text-[#22d3ee] mx-auto mb-2" />
                     <p className="text-2xl font-display font-bold text-[#22d3ee]">
                       {Object.values(selectedRanking.aiCitations).filter(Boolean).length}/3
                     </p>
-                    <p className="text-xs text-muted-foreground font-mono">AI Platforms</p>
+                    <p className="text-xs text-muted-foreground font-mono">AIプラットフォーム</p>
                   </div>
                 </div>
 
                 {/* AI Citations */}
                 <div>
                   <h4 className="text-sm font-mono text-muted-foreground mb-3">
-                    AI Platform Status
+                    AIプラットフォーム状態
                   </h4>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between p-2 rounded bg-white/5">
@@ -572,7 +571,7 @@ export default function RankTracking() {
                 {/* Trend Chart */}
                 <div>
                   <h4 className="text-sm font-mono text-muted-foreground mb-3">
-                    7-Day Trend
+                    7日間のトレンド
                   </h4>
                   <RankingDetailChart ranking={selectedRanking} />
                 </div>
@@ -581,13 +580,13 @@ export default function RankTracking() {
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Calendar className="w-3 h-3" />
                   <span className="font-mono">
-                    Last updated: {selectedRanking.lastUpdated}
+                    最終更新: {selectedRanking.lastUpdated}
                   </span>
                 </div>
               </div>
             ) : (
               <div className="h-full flex items-center justify-center text-muted-foreground">
-                <p className="text-sm font-mono">Select a keyword to view details</p>
+                <p className="text-sm font-mono">キーワードを選択して詳細を表示</p>
               </div>
             )}
           </motion.div>

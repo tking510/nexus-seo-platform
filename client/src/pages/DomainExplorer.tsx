@@ -13,7 +13,6 @@ import {
   Link2,
   Search,
   Shield,
-  FileCode,
   Brain,
   Eye,
   ExternalLink,
@@ -103,10 +102,10 @@ export default function DomainExplorer() {
   const [searchUrl, setSearchUrl] = useState("example.com");
 
   const aiReadabilityData = [
-    { subject: "Semantic HTML", A: domainData.semanticHtmlScore, fullMark: 100 },
+    { subject: "セマンティックHTML", A: domainData.semanticHtmlScore, fullMark: 100 },
     { subject: "Schema.org", A: domainData.schemaOrgScore, fullMark: 100 },
-    { subject: "Content Clarity", A: domainData.contentClarityScore, fullMark: 100 },
-    { subject: "AI Readability", A: domainData.aiReadabilityScore, fullMark: 100 },
+    { subject: "コンテンツ明瞭性", A: domainData.contentClarityScore, fullMark: 100 },
+    { subject: "AI可読性", A: domainData.aiReadabilityScore, fullMark: 100 },
   ];
 
   const competitorData = domainData.competitorOverlap.map((comp) => ({
@@ -144,15 +143,15 @@ export default function DomainExplorer() {
             <div className="flex items-center gap-2 mb-2">
               <Globe className="w-5 h-5 text-[#22d3ee]" />
               <span className="text-xs font-mono text-[#22d3ee] uppercase tracking-widest">
-                Domain & URL Explorer
+                ドメイン & URL エクスプローラー
               </span>
             </div>
             <h1 className="text-3xl font-display font-bold text-foreground mb-2">
-              Backlink Profile & <span className="text-[#22d3ee]">AI Audit</span>
+              被リンクプロファイル & <span className="text-[#22d3ee]">AI監査</span>
             </h1>
             <p className="text-muted-foreground max-w-2xl">
-              Analyze backlink profiles, domain authority, and AI-readability scores.
-              Understand how LLM crawlers interpret your content.
+              被リンクプロファイル、ドメインオーソリティ、AI可読性スコアを分析。
+              LLMクローラーがコンテンツをどのように解釈するかを把握できます。
             </p>
           </div>
         </motion.div>
@@ -163,7 +162,7 @@ export default function DomainExplorer() {
             <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Enter domain or URL to analyze..."
+              placeholder="分析するドメインまたはURLを入力..."
               value={searchUrl}
               onChange={(e) => setSearchUrl(e.target.value)}
               className="pl-10 bg-white/5 border-border/50 font-mono"
@@ -171,7 +170,7 @@ export default function DomainExplorer() {
           </div>
           <Button className="gap-2 bg-[#22d3ee] hover:bg-[#22d3ee]/80 text-black">
             <Search className="w-4 h-4" />
-            Analyze
+            分析
           </Button>
         </motion.div>
 
@@ -187,7 +186,7 @@ export default function DomainExplorer() {
           >
             <div className="flex items-center gap-2 mb-2">
               <Shield className="w-4 h-4 text-[#8b5cf6]" />
-              <span className="text-xs text-muted-foreground font-mono">Domain Rating</span>
+              <span className="text-xs text-muted-foreground font-mono">ドメインレーティング</span>
             </div>
             <p className="text-3xl font-display font-bold text-[#8b5cf6]">
               {domainData.domainRating}
@@ -205,12 +204,12 @@ export default function DomainExplorer() {
           >
             <div className="flex items-center gap-2 mb-2">
               <BarChart3 className="w-4 h-4 text-[#22d3ee]" />
-              <span className="text-xs text-muted-foreground font-mono">Organic Traffic</span>
+              <span className="text-xs text-muted-foreground font-mono">オーガニックトラフィック</span>
             </div>
             <p className="text-3xl font-display font-bold text-[#22d3ee]">
               {(domainData.organicTraffic / 1000).toFixed(0)}K
             </p>
-            <p className="text-xs text-muted-foreground mt-1 font-mono">monthly visits</p>
+            <p className="text-xs text-muted-foreground mt-1 font-mono">月間訪問数</p>
           </motion.div>
 
           <motion.div
@@ -223,12 +222,12 @@ export default function DomainExplorer() {
           >
             <div className="flex items-center gap-2 mb-2">
               <Link2 className="w-4 h-4 text-[#ec4899]" />
-              <span className="text-xs text-muted-foreground font-mono">Backlinks</span>
+              <span className="text-xs text-muted-foreground font-mono">被リンク</span>
             </div>
             <p className="text-3xl font-display font-bold text-[#ec4899]">
               {(domainData.backlinks / 1000).toFixed(1)}K
             </p>
-            <p className="text-xs text-muted-foreground mt-1 font-mono">total links</p>
+            <p className="text-xs text-muted-foreground mt-1 font-mono">総リンク数</p>
           </motion.div>
 
           <motion.div
@@ -241,12 +240,12 @@ export default function DomainExplorer() {
           >
             <div className="flex items-center gap-2 mb-2">
               <Users className="w-4 h-4 text-[#22c55e]" />
-              <span className="text-xs text-muted-foreground font-mono">Referring Domains</span>
+              <span className="text-xs text-muted-foreground font-mono">参照ドメイン</span>
             </div>
             <p className="text-3xl font-display font-bold text-[#22c55e]">
               {(domainData.referringDomains / 1000).toFixed(1)}K
             </p>
-            <p className="text-xs text-muted-foreground mt-1 font-mono">unique domains</p>
+            <p className="text-xs text-muted-foreground mt-1 font-mono">ユニークドメイン</p>
           </motion.div>
         </div>
 
@@ -264,7 +263,7 @@ export default function DomainExplorer() {
             <div className="flex items-center gap-2 mb-6">
               <Brain className="w-5 h-5 text-[#8b5cf6]" />
               <h3 className="text-lg font-display font-bold text-foreground">
-                AI-Readability Audit
+                AI可読性監査
               </h3>
             </div>
 
@@ -272,7 +271,7 @@ export default function DomainExplorer() {
             <div className="grid grid-cols-2 gap-4 mb-6">
               <ScoreGauge
                 score={domainData.semanticHtmlScore}
-                label="Semantic HTML"
+                label="セマンティックHTML"
                 color="#8b5cf6"
               />
               <ScoreGauge
@@ -282,12 +281,12 @@ export default function DomainExplorer() {
               />
               <ScoreGauge
                 score={domainData.contentClarityScore}
-                label="Content Clarity"
+                label="コンテンツ明瞭性"
                 color="#ec4899"
               />
               <ScoreGauge
                 score={domainData.aiReadabilityScore}
-                label="AI Readability"
+                label="AI可読性"
                 color="#22c55e"
               />
             </div>
@@ -307,7 +306,7 @@ export default function DomainExplorer() {
                     tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 8 }}
                   />
                   <Radar
-                    name="Score"
+                    name="スコア"
                     dataKey="A"
                     stroke="#8b5cf6"
                     fill="#8b5cf6"
@@ -331,11 +330,11 @@ export default function DomainExplorer() {
               <div className="flex items-center gap-2">
                 <Link2 className="w-5 h-5 text-[#22d3ee]" />
                 <h3 className="text-lg font-display font-bold text-foreground">
-                  Top Backlinks
+                  上位被リンク
                 </h3>
               </div>
               <Button variant="ghost" size="sm" className="text-xs text-[#22d3ee]">
-                View All <ArrowUpRight className="w-3 h-3 ml-1" />
+                すべて表示 <ArrowUpRight className="w-3 h-3 ml-1" />
               </Button>
             </div>
 
@@ -344,16 +343,16 @@ export default function DomainExplorer() {
                 <thead>
                   <tr className="border-b border-border/50">
                     <th className="text-left text-xs text-muted-foreground font-mono uppercase tracking-wider py-3">
-                      Source Domain
+                      参照元ドメイン
                     </th>
                     <th className="text-left text-xs text-muted-foreground font-mono uppercase tracking-wider py-3">
-                      Target URL
+                      ターゲットURL
                     </th>
                     <th className="text-center text-xs text-muted-foreground font-mono uppercase tracking-wider py-3">
                       DR
                     </th>
                     <th className="text-center text-xs text-muted-foreground font-mono uppercase tracking-wider py-3">
-                      Type
+                      タイプ
                     </th>
                   </tr>
                 </thead>
@@ -424,7 +423,7 @@ export default function DomainExplorer() {
           <div className="flex items-center gap-2 mb-6">
             <Eye className="w-5 h-5 text-[#ec4899]" />
             <h3 className="text-lg font-display font-bold text-foreground">
-              Competitor Keyword Gap
+              競合キーワードギャップ分析
             </h3>
           </div>
 
@@ -454,8 +453,8 @@ export default function DomainExplorer() {
                       fontFamily: "JetBrains Mono",
                     }}
                   />
-                  <Bar dataKey="shared" name="Shared Keywords" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
-                  <Bar dataKey="gap" name="Keyword Gap" fill="#ec4899" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="shared" name="共有キーワード" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="gap" name="キーワードギャップ" fill="#ec4899" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -475,13 +474,13 @@ export default function DomainExplorer() {
                       </span>
                     </div>
                     <span className="text-xs text-muted-foreground font-mono">
-                      {comp.uniqueKeywords.toLocaleString()} total keywords
+                      {comp.uniqueKeywords.toLocaleString()} 総キーワード
                     </span>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">Shared</span>
+                        <span className="text-muted-foreground">共有</span>
                         <span className="text-[#8b5cf6] font-mono">
                           {comp.sharedKeywords.toLocaleString()}
                         </span>
@@ -497,7 +496,7 @@ export default function DomainExplorer() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">Gap</span>
+                        <span className="text-muted-foreground">ギャップ</span>
                         <span className="text-[#ec4899] font-mono">
                           {comp.gap.toLocaleString()}
                         </span>

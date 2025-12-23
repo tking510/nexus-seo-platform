@@ -1,9 +1,9 @@
 /*
- * Mock Data for Nexus SEO & LLMO Intelligence Platform
- * This file contains sample data for demonstrating the dashboard functionality
+ * Nexus SEO & LLMO Intelligence Platform用モックデータ
+ * このファイルにはダッシュボード機能のデモ用サンプルデータが含まれています
  */
 
-// Keyword Intelligence Data
+// キーワードインテリジェンスデータ
 export interface KeywordData {
   id: string;
   keyword: string;
@@ -23,73 +23,73 @@ export interface KeywordData {
 export const keywordData: KeywordData[] = [
   {
     id: "1",
-    keyword: "best seo tools 2024",
+    keyword: "SEOツール おすすめ 2024",
     searchVolume: 12500,
     keywordDifficulty: 67,
     cpc: 4.52,
-    serpFeatures: ["Featured Snippet", "People Also Ask", "Video"],
+    serpFeatures: ["強調スニペット", "関連する質問", "動画"],
     aiVisibility: { chatgpt: 78, perplexity: 82, gemini: 71 },
     trend: [8500, 9200, 10100, 11000, 11800, 12500, 13200, 14100, 13800, 12900, 12500, 12800],
     intent: "commercial",
   },
   {
     id: "2",
-    keyword: "how to improve website ranking",
+    keyword: "ウェブサイト順位 上げる方法",
     searchVolume: 8900,
     keywordDifficulty: 54,
     cpc: 3.21,
-    serpFeatures: ["Featured Snippet", "People Also Ask"],
+    serpFeatures: ["強調スニペット", "関連する質問"],
     aiVisibility: { chatgpt: 85, perplexity: 79, gemini: 88 },
     trend: [7200, 7800, 8100, 8400, 8600, 8900, 9100, 9400, 9200, 8800, 8900, 9000],
     intent: "informational",
   },
   {
     id: "3",
-    keyword: "ai content optimization",
+    keyword: "AIコンテンツ最適化",
     searchVolume: 15200,
     keywordDifficulty: 72,
     cpc: 5.87,
-    serpFeatures: ["Featured Snippet", "Knowledge Panel", "Video"],
+    serpFeatures: ["強調スニペット", "ナレッジパネル", "動画"],
     aiVisibility: { chatgpt: 92, perplexity: 95, gemini: 89 },
     trend: [5000, 6200, 7800, 9500, 11200, 13000, 14200, 15200, 16100, 15800, 15200, 15500],
     intent: "commercial",
   },
   {
     id: "4",
-    keyword: "local seo strategies",
+    keyword: "ローカルSEO戦略",
     searchVolume: 6700,
     keywordDifficulty: 48,
     cpc: 2.95,
-    serpFeatures: ["Local Pack", "People Also Ask"],
+    serpFeatures: ["ローカルパック", "関連する質問"],
     aiVisibility: { chatgpt: 72, perplexity: 68, gemini: 75 },
     trend: [6100, 6300, 6500, 6600, 6700, 6700, 6800, 6900, 6800, 6700, 6700, 6800],
     intent: "informational",
   },
   {
     id: "5",
-    keyword: "buy backlinks safely",
+    keyword: "被リンク 購入 安全",
     searchVolume: 4200,
     keywordDifficulty: 81,
     cpc: 8.45,
-    serpFeatures: ["People Also Ask"],
+    serpFeatures: ["関連する質問"],
     aiVisibility: { chatgpt: 15, perplexity: 12, gemini: 18 },
     trend: [3800, 3900, 4000, 4100, 4200, 4200, 4300, 4400, 4300, 4200, 4200, 4100],
     intent: "transactional",
   },
   {
     id: "6",
-    keyword: "generative engine optimization",
+    keyword: "生成エンジン最適化 GEO",
     searchVolume: 22100,
     keywordDifficulty: 45,
     cpc: 6.12,
-    serpFeatures: ["Featured Snippet", "Knowledge Panel", "Video", "People Also Ask"],
+    serpFeatures: ["強調スニペット", "ナレッジパネル", "動画", "関連する質問"],
     aiVisibility: { chatgpt: 98, perplexity: 96, gemini: 94 },
     trend: [2000, 4500, 7800, 11200, 14500, 17800, 19500, 22100, 24500, 23800, 22100, 23200],
     intent: "informational",
   },
 ];
 
-// Domain Explorer Data
+// ドメインエクスプローラーデータ
 export interface BacklinkData {
   id: string;
   sourceDomain: string;
@@ -135,7 +135,7 @@ export const domainData: DomainData = {
       id: "1",
       sourceDomain: "techcrunch.com",
       targetUrl: "/blog/ai-seo-guide",
-      anchorText: "comprehensive AI SEO guide",
+      anchorText: "包括的なAI SEOガイド",
       domainRating: 94,
       doFollow: true,
       firstSeen: "2024-03-15",
@@ -145,7 +145,7 @@ export const domainData: DomainData = {
       id: "2",
       sourceDomain: "searchengineland.com",
       targetUrl: "/tools/keyword-analyzer",
-      anchorText: "keyword analysis tool",
+      anchorText: "キーワード分析ツール",
       domainRating: 89,
       doFollow: true,
       firstSeen: "2024-05-22",
@@ -155,7 +155,7 @@ export const domainData: DomainData = {
       id: "3",
       sourceDomain: "moz.com",
       targetUrl: "/",
-      anchorText: "Nexus SEO Platform",
+      anchorText: "Nexus SEOプラットフォーム",
       domainRating: 91,
       doFollow: true,
       firstSeen: "2024-01-10",
@@ -165,7 +165,7 @@ export const domainData: DomainData = {
       id: "4",
       sourceDomain: "ahrefs.com",
       targetUrl: "/blog/llmo-optimization",
-      anchorText: "LLMO optimization strategies",
+      anchorText: "LLMO最適化戦略",
       domainRating: 92,
       doFollow: false,
       firstSeen: "2024-07-08",
@@ -175,7 +175,7 @@ export const domainData: DomainData = {
       id: "5",
       sourceDomain: "semrush.com",
       targetUrl: "/features",
-      anchorText: "SEO features comparison",
+      anchorText: "SEO機能比較",
       domainRating: 93,
       doFollow: true,
       firstSeen: "2024-09-14",
@@ -189,7 +189,7 @@ export const domainData: DomainData = {
   ],
 };
 
-// Rank Tracking Data
+// 順位トラッキングデータ
 export interface RankingData {
   id: string;
   keyword: string;
@@ -209,7 +209,7 @@ export interface RankingData {
 export const rankingData: RankingData[] = [
   {
     id: "1",
-    keyword: "best seo tools",
+    keyword: "SEOツール おすすめ",
     googleRank: 3,
     googleRankChange: 2,
     aiCitations: { chatgpt: true, perplexity: true, gemini: true },
@@ -228,7 +228,7 @@ export const rankingData: RankingData[] = [
   },
   {
     id: "2",
-    keyword: "ai content optimization",
+    keyword: "AIコンテンツ最適化",
     googleRank: 1,
     googleRankChange: 0,
     aiCitations: { chatgpt: true, perplexity: true, gemini: true },
@@ -247,7 +247,7 @@ export const rankingData: RankingData[] = [
   },
   {
     id: "3",
-    keyword: "generative engine optimization",
+    keyword: "生成エンジン最適化",
     googleRank: 2,
     googleRankChange: 5,
     aiCitations: { chatgpt: true, perplexity: true, gemini: false },
@@ -266,7 +266,7 @@ export const rankingData: RankingData[] = [
   },
   {
     id: "4",
-    keyword: "keyword research tool",
+    keyword: "キーワードリサーチツール",
     googleRank: 8,
     googleRankChange: -2,
     aiCitations: { chatgpt: false, perplexity: true, gemini: false },
@@ -285,7 +285,7 @@ export const rankingData: RankingData[] = [
   },
   {
     id: "5",
-    keyword: "backlink checker",
+    keyword: "被リンクチェッカー",
     googleRank: 12,
     googleRankChange: -3,
     aiCitations: { chatgpt: false, perplexity: false, gemini: false },
@@ -304,7 +304,7 @@ export const rankingData: RankingData[] = [
   },
 ];
 
-// Dashboard Overview Data
+// ダッシュボード概要データ
 export const dashboardStats = {
   totalKeywords: 1247,
   keywordsChange: 12.5,
@@ -321,18 +321,18 @@ export const dashboardStats = {
 };
 
 export const trafficTrendData = [
-  { month: "Jan", organic: 85000, ai: 12000 },
-  { month: "Feb", organic: 92000, ai: 15000 },
-  { month: "Mar", organic: 98000, ai: 18000 },
-  { month: "Apr", organic: 105000, ai: 22000 },
-  { month: "May", organic: 112000, ai: 28000 },
-  { month: "Jun", organic: 118000, ai: 35000 },
-  { month: "Jul", organic: 122000, ai: 42000 },
-  { month: "Aug", organic: 125000, ai: 48000 },
-  { month: "Sep", organic: 128000, ai: 52000 },
-  { month: "Oct", organic: 130000, ai: 58000 },
-  { month: "Nov", organic: 127000, ai: 62000 },
-  { month: "Dec", organic: 125000, ai: 68000 },
+  { month: "1月", organic: 85000, ai: 12000 },
+  { month: "2月", organic: 92000, ai: 15000 },
+  { month: "3月", organic: 98000, ai: 18000 },
+  { month: "4月", organic: 105000, ai: 22000 },
+  { month: "5月", organic: 112000, ai: 28000 },
+  { month: "6月", organic: 118000, ai: 35000 },
+  { month: "7月", organic: 122000, ai: 42000 },
+  { month: "8月", organic: 125000, ai: 48000 },
+  { month: "9月", organic: 128000, ai: 52000 },
+  { month: "10月", organic: 130000, ai: 58000 },
+  { month: "11月", organic: 127000, ai: 62000 },
+  { month: "12月", organic: 125000, ai: 68000 },
 ];
 
 export const aiPlatformData = [
@@ -346,29 +346,29 @@ export const recentAlerts = [
   {
     id: "1",
     type: "success",
-    title: "Ranking Improved",
-    message: '"best seo tools" moved from #5 to #3 on Google',
-    time: "2 hours ago",
+    title: "順位上昇",
+    message: '「SEOツール おすすめ」がGoogleで#5から#3に上昇しました',
+    time: "2時間前",
   },
   {
     id: "2",
     type: "info",
-    title: "New AI Citation",
-    message: "Your content was cited by ChatGPT for \"ai content optimization\"",
-    time: "5 hours ago",
+    title: "新規AI引用",
+    message: 'ChatGPTが「AIコンテンツ最適化」であなたのコンテンツを引用しました',
+    time: "5時間前",
   },
   {
     id: "3",
     type: "warning",
-    title: "Ranking Drop",
-    message: '"backlink checker" dropped from #9 to #12',
-    time: "1 day ago",
+    title: "順位下落",
+    message: '「被リンクチェッカー」が#9から#12に下落しました',
+    time: "1日前",
   },
   {
     id: "4",
     type: "success",
-    title: "New Backlink",
-    message: "High DR backlink acquired from techcrunch.com",
-    time: "2 days ago",
+    title: "新規被リンク",
+    message: "techcrunch.comから高DRの被リンクを獲得しました",
+    time: "2日前",
   },
 ];

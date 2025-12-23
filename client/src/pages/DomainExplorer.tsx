@@ -5,24 +5,22 @@
  * - Competitor gap analysis
  * - AI-powered improvement suggestions
  * - CSV export functionality
- * - Dynamic data generation based on input domain
+ * - Real AI-powered data analysis
  */
 
 import DashboardLayout from "@/components/DashboardLayout";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Globe,
   Link2,
   Search,
-  Shield,
   Brain,
   Eye,
   ExternalLink,
   CheckCircle,
   XCircle,
   ArrowUpRight,
-  BarChart3,
   Users,
   Download,
   Loader2,
@@ -72,156 +70,82 @@ const itemVariants = {
   },
 };
 
-// ドメインに基づいて動的にデータを生成する関数
-function generateDomainData(domain: string) {
-  // ドメイン名からシード値を生成（一貫性のあるデータ生成のため）
-  const seed = domain.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const random = (min: number, max: number) => {
-    const x = Math.sin(seed * 9999) * 10000;
-    return Math.floor((x - Math.floor(x)) * (max - min + 1)) + min;
+// AI分析結果の型定義
+interface DomainAnalysisResult {
+  domainOverview: {
+    estimatedDR: number;
+    estimatedTraffic: number;
+    mainTopics: string[];
+    targetAudience: string;
+    siteType: string;
   };
-  
-  // ドメインの種類に基づいてスコアを調整
-  const isWellKnown = ['google', 'amazon', 'microsoft', 'apple', 'facebook', 'twitter', 'youtube', 'wikipedia', 'github'].some(
-    known => domain.toLowerCase().includes(known)
-  );
-  
-  const baseScore = isWellKnown ? 80 : 50;
-  const variance = isWellKnown ? 15 : 40;
-  
-  const domainRating = Math.min(100, Math.max(10, baseScore + random(-variance, variance)));
-  const organicTraffic = isWellKnown ? random(500000, 5000000) : random(1000, 200000);
-  const backlinks = isWellKnown ? random(100000, 1000000) : random(100, 50000);
-  const referringDomains = Math.floor(backlinks * (random(5, 15) / 100));
-  
-  // AI可読性スコア
-  const semanticHtmlScore = random(60, 98);
-  const schemaOrgScore = random(40, 95);
-  const contentClarityScore = random(55, 95);
-  const aiReadabilityScore = Math.round((semanticHtmlScore + schemaOrgScore + contentClarityScore) / 3);
-  
-  // 競合サイトを動的に生成
-  const competitorDomains = generateCompetitors(domain);
-  const competitorOverlap = competitorDomains.map(comp => ({
-    competitor: comp,
-    sharedKeywords: random(100, 5000),
-    uniqueKeywords: random(500, 15000),
-    gap: random(200, 10000),
-  }));
-  
-  // 被リンクを動的に生成
-  const topBacklinks = generateBacklinks(domain, 25);
-  
-  // 強みキーワードを生成
-  const strongKeywords = generateStrongKeywords(domain);
-  
-  return {
-    domain,
-    domainRating,
-    organicTraffic,
-    backlinks,
-    referringDomains,
-    aiReadabilityScore,
-    semanticHtmlScore,
-    schemaOrgScore,
-    contentClarityScore,
-    topBacklinks,
-    competitorOverlap,
-    strongKeywords,
+  strengthKeywords: Array<{
+    keyword: string;
+    searchVolume: number;
+    estimatedRank: number;
+    aiVisibility: number;
+    intent: string;
+    difficulty: number;
+  }>;
+  competitors: Array<{
+    domain: string;
+    overlapScore: number;
+    strengths: string[];
+  }>;
+  backlinks: {
+    estimatedTotal: number;
+    estimatedReferringDomains: number;
+    topSources: Array<{
+      domain: string;
+      dr: number;
+      type: string;
+      context: string;
+    }>;
   };
+  aiReadability: {
+    semanticHTML: number;
+    schemaOrg: number;
+    contentClarity: number;
+    overallScore: number;
+  };
+  improvements: Array<{
+    category: string;
+    priority: string;
+    title: string;
+    description: string;
+    expectedImpact: string;
+    implementationSteps: string[];
+  }>;
 }
 
-// 競合サイトを生成
-function generateCompetitors(domain: string): string[] {
-  const domainLower = domain.toLowerCase();
-  
-  // 業界別の競合サイト
-  const industryCompetitors: Record<string, string[]> = {
-    'seo': ['ahrefs.com', 'semrush.com', 'moz.com', 'serpstat.com', 'ubersuggest.com'],
-    'ecommerce': ['amazon.co.jp', 'rakuten.co.jp', 'yahoo-shopping.jp', 'mercari.com', 'zozotown.jp'],
-    'news': ['yahoo.co.jp', 'nikkei.com', 'asahi.com', 'mainichi.jp', 'sankei.com'],
-    'tech': ['techcrunch.com', 'wired.jp', 'gizmodo.jp', 'engadget.com', 'theverge.com'],
-    'travel': ['booking.com', 'expedia.co.jp', 'tripadvisor.jp', 'jalan.net', 'ikyu.com'],
-    'food': ['tabelog.com', 'gnavi.co.jp', 'hotpepper.jp', 'retty.me', 'yelp.com'],
-    'finance': ['yahoo-finance.jp', 'bloomberg.co.jp', 'nikkei.com', 'moneyforward.com', 'freee.co.jp'],
-    'education': ['udemy.com', 'coursera.org', 'edx.org', 'schoo.jp', 'progate.com'],
-    'health': ['healthline.com', 'webmd.com', 'mayoclinic.org', 'medicalnewstoday.com', 'health.ne.jp'],
+interface LLMCitationResult {
+  overallVisibility: number;
+  platforms: {
+    chatgpt: { score: number; mentions: string[]; sentiment: string };
+    perplexity: { score: number; mentions: string[]; sentiment: string };
+    gemini: { score: number; mentions: string[]; sentiment: string };
   };
-  
-  // ドメインに含まれるキーワードから業界を推測
-  for (const [industry, competitors] of Object.entries(industryCompetitors)) {
-    if (domainLower.includes(industry) || competitors.some(c => domainLower.includes(c.split('.')[0]))) {
-      return competitors.filter(c => c !== domain).slice(0, 5);
-    }
-  }
-  
-  // デフォルトの競合（一般的なサイト）
-  const defaultCompetitors = [
-    `${domain.split('.')[0]}-competitor1.com`,
-    `${domain.split('.')[0]}-competitor2.com`,
-    `similar-${domain}`,
-    `alt-${domain.split('.')[0]}.com`,
-    `${domain.split('.')[0]}-alternative.jp`,
-  ];
-  
-  return defaultCompetitors.slice(0, 5);
+  recommendations: string[];
 }
 
-// 被リンクを生成
-function generateBacklinks(domain: string, count: number) {
-  const sources = [
-    'techcrunch.com', 'forbes.com', 'wired.com', 'mashable.com', 'theverge.com',
-    'searchengineland.com', 'moz.com', 'ahrefs.com', 'semrush.com', 'hubspot.com',
-    'nikkei.com', 'itmedia.co.jp', 'impress.co.jp', 'ascii.jp', 'gizmodo.jp',
-    'gigazine.net', 'hatena.ne.jp', 'qiita.com', 'zenn.dev', 'note.com',
-    'wikipedia.org', 'github.com', 'medium.com', 'linkedin.com', 'twitter.com',
-  ];
-  
-  const anchorTexts = [
-    `${domain}の公式サイト`, `${domain}について`, `詳細はこちら`,
-    `参考リンク`, `おすすめツール`, `便利なサービス`,
-    `${domain}レビュー`, `${domain}の使い方`, `${domain}ガイド`,
-  ];
-  
-  const targetUrls = ['/', '/blog', '/features', '/pricing', '/about', '/tools', '/resources'];
-  
-  return Array.from({ length: count }, (_, i) => {
-    const seed = domain.length + i;
-    const sourceIndex = (seed * 7) % sources.length;
-    const anchorIndex = (seed * 3) % anchorTexts.length;
-    const urlIndex = (seed * 5) % targetUrls.length;
-    
-    return {
-      id: `bl-${i + 1}`,
-      sourceDomain: sources[sourceIndex],
-      targetUrl: targetUrls[urlIndex],
-      anchorText: anchorTexts[anchorIndex],
-      domainRating: 70 + ((seed * 11) % 25),
-      doFollow: (seed % 5) !== 0,
-      firstSeen: `2024-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`,
-      lastSeen: '2024-12-24',
-    };
-  });
-}
-
-// 強みキーワードを生成
-function generateStrongKeywords(domain: string) {
-  const domainName = domain.split('.')[0].toLowerCase();
-  
-  const keywordTemplates = [
-    { keyword: `${domainName} 使い方`, volume: 8500, rank: 1, aiVisibility: 92 },
-    { keyword: `${domainName} 料金`, volume: 6200, rank: 2, aiVisibility: 88 },
-    { keyword: `${domainName} 評判`, volume: 5800, rank: 3, aiVisibility: 85 },
-    { keyword: `${domainName} 比較`, volume: 4500, rank: 5, aiVisibility: 78 },
-    { keyword: `${domainName} 代替`, volume: 3200, rank: 8, aiVisibility: 72 },
-    { keyword: `${domainName} メリット`, volume: 2800, rank: 4, aiVisibility: 82 },
-    { keyword: `${domainName} デメリット`, volume: 2400, rank: 6, aiVisibility: 75 },
-    { keyword: `${domainName} 始め方`, volume: 2100, rank: 7, aiVisibility: 80 },
-    { keyword: `${domainName} おすすめ`, volume: 1800, rank: 9, aiVisibility: 70 },
-    { keyword: `${domainName} 無料`, volume: 1500, rank: 12, aiVisibility: 65 },
-  ];
-  
-  return keywordTemplates;
+// AI分析結果の型定義（既存のUI用）
+interface DomainAnalysis {
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  technicalImprovements: Array<{
+    area: string;
+    action: string;
+    impact: string;
+  }>;
+  backlinkStrategy: string[];
+  differentiationPoints: string[];
+  priorityActions: Array<{
+    action: string;
+    priority: number;
+    effort: string;
+    expectedImpact: string;
+  }>;
 }
 
 function ScoreGauge({ score, label, color }: { score: number; label: string; color: string }) {
@@ -260,26 +184,6 @@ function ScoreGauge({ score, label, color }: { score: number; label: string; col
       <p className="text-xs text-muted-foreground font-mono">{label}</p>
     </div>
   );
-}
-
-// AI分析結果の型定義
-interface DomainAnalysis {
-  summary: string;
-  strengths: string[];
-  weaknesses: string[];
-  technicalImprovements: Array<{
-    area: string;
-    action: string;
-    impact: string;
-  }>;
-  backlinkStrategy: string[];
-  differentiationPoints: string[];
-  priorityActions: Array<{
-    action: string;
-    priority: number;
-    effort: string;
-    expectedImpact: string;
-  }>;
 }
 
 function AIAnalysisPanel({ 
@@ -335,78 +239,80 @@ function AIAnalysisPanel({
         <h3 className="text-lg font-display font-bold text-foreground">AI改善提案</h3>
       </div>
 
-      {/* サマリー */}
-      <div className="mb-6 p-4 rounded-lg bg-white/5 border border-border/50">
+      {/* Summary */}
+      <div className="p-4 rounded-lg bg-white/5 mb-4">
         <p className="text-sm text-foreground">{analysis.summary}</p>
       </div>
 
-      {/* 強みと弱み */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Strengths */}
+        <div className="p-4 rounded-lg bg-[#22c55e]/10 border border-[#22c55e]/20">
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle className="w-4 h-4 text-[#22c55e]" />
-            <h4 className="text-sm font-mono text-muted-foreground">強み</h4>
+            <h4 className="text-sm font-bold text-[#22c55e]">強み</h4>
           </div>
           <ul className="space-y-2">
-            {analysis.strengths.map((item, index) => (
-              <li key={index} className="flex items-start gap-2 text-sm text-foreground">
-                <ArrowUpRight className="w-4 h-4 text-[#22c55e] mt-0.5 flex-shrink-0" />
-                <span>{item}</span>
+            {analysis.strengths.map((strength, i) => (
+              <li key={i} className="text-xs text-foreground flex items-start gap-2">
+                <span className="text-[#22c55e] mt-0.5">•</span>
+                {strength}
               </li>
             ))}
           </ul>
         </div>
-        <div>
+
+        {/* Weaknesses */}
+        <div className="p-4 rounded-lg bg-[#ef4444]/10 border border-[#ef4444]/20">
           <div className="flex items-center gap-2 mb-3">
-            <AlertCircle className="w-4 h-4 text-[#f59e0b]" />
-            <h4 className="text-sm font-mono text-muted-foreground">改善点</h4>
+            <AlertCircle className="w-4 h-4 text-[#ef4444]" />
+            <h4 className="text-sm font-bold text-[#ef4444]">改善点</h4>
           </div>
           <ul className="space-y-2">
-            {analysis.weaknesses.map((item, index) => (
-              <li key={index} className="flex items-start gap-2 text-sm text-foreground">
-                <Target className="w-4 h-4 text-[#f59e0b] mt-0.5 flex-shrink-0" />
-                <span>{item}</span>
+            {analysis.weaknesses.map((weakness, i) => (
+              <li key={i} className="text-xs text-foreground flex items-start gap-2">
+                <span className="text-[#ef4444] mt-0.5">•</span>
+                {weakness}
               </li>
             ))}
           </ul>
         </div>
       </div>
 
-      {/* 技術的改善点 */}
-      <div className="mb-6">
+      {/* Technical Improvements */}
+      <div className="mt-4 p-4 rounded-lg bg-white/5">
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 text-[#8b5cf6]" />
-          <h4 className="text-sm font-mono text-muted-foreground">技術的改善点</h4>
+          <Lightbulb className="w-4 h-4 text-[#f59e0b]" />
+          <h4 className="text-sm font-bold text-[#f59e0b]">技術的改善点</h4>
         </div>
         <div className="space-y-2">
-          {analysis.technicalImprovements.map((item, index) => (
-            <div key={index} className="p-3 rounded-lg bg-white/5 border border-border/50">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-foreground">{item.area}</span>
+          {analysis.technicalImprovements.map((item, i) => (
+            <div key={i} className="flex items-center justify-between p-2 rounded bg-white/5">
+              <div className="flex items-center gap-2">
                 <span className={cn(
-                  "text-xs font-mono px-2 py-0.5 rounded",
-                  item.impact === "高" ? "bg-[#22c55e]/20 text-[#22c55e]" :
+                  "text-xs px-2 py-0.5 rounded font-mono",
+                  item.impact === "高" ? "bg-[#ef4444]/20 text-[#ef4444]" :
                   item.impact === "中" ? "bg-[#f59e0b]/20 text-[#f59e0b]" :
-                  "bg-[#8b5cf6]/20 text-[#8b5cf6]"
+                  "bg-[#22c55e]/20 text-[#22c55e]"
                 )}>
-                  影響度: {item.impact}
+                  {item.impact}
                 </span>
+                <span className="text-xs text-muted-foreground">{item.area}</span>
               </div>
-              <p className="text-xs text-muted-foreground">{item.action}</p>
+              <span className="text-xs text-foreground">{item.action}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* 優先アクション */}
-      <div className="p-4 rounded-lg bg-[#22d3ee]/10 border border-[#22d3ee]/30">
+      {/* Priority Actions */}
+      <div className="mt-4 p-4 rounded-lg bg-white/5">
         <div className="flex items-center gap-2 mb-3">
-          <TrendingUp className="w-4 h-4 text-[#22d3ee]" />
-          <h4 className="text-sm font-mono text-muted-foreground">優先アクション</h4>
+          <Target className="w-4 h-4 text-[#8b5cf6]" />
+          <h4 className="text-sm font-bold text-[#8b5cf6]">優先アクション</h4>
         </div>
         <div className="space-y-2">
-          {analysis.priorityActions.slice(0, 5).map((item, index) => (
-            <div key={index} className="flex items-center justify-between text-sm">
+          {analysis.priorityActions.slice(0, 5).map((item, i) => (
+            <div key={i} className="flex items-center justify-between p-2 rounded bg-white/5">
               <div className="flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-[#22d3ee]/20 flex items-center justify-center text-xs font-bold text-[#22d3ee]">
                   {item.priority}
@@ -424,20 +330,61 @@ function AIAnalysisPanel({
 
 export default function DomainExplorer() {
   const [searchUrl, setSearchUrl] = useState("");
-  const [analyzedDomain, setAnalyzedDomain] = useState<string | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<DomainAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  
+  // AI分析結果を保存
+  const [domainAnalysisResult, setDomainAnalysisResult] = useState<DomainAnalysisResult | null>(null);
+  const [llmCitations, setLlmCitations] = useState<LLMCitationResult | null>(null);
 
   const analyzeDomainMutation = trpc.seo.analyzeDomain.useMutation();
   const exportCSVMutation = trpc.export.domainToCSV.useMutation();
-  const pageSpeedMutation = trpc.pageSpeed.analyze.useMutation();
+  const fetchAndAnalyzeMutation = trpc.aiAnalysis.fetchAndAnalyzeDomain.useMutation();
 
-  // 動的に生成されたドメインデータ
+  // 分析結果からUIデータを生成
   const domainData = useMemo(() => {
-    if (!analyzedDomain) return null;
-    return generateDomainData(analyzedDomain);
-  }, [analyzedDomain]);
+    if (!domainAnalysisResult) return null;
+    
+    const analysis = domainAnalysisResult;
+    return {
+      domain: searchUrl.replace(/^https?:\/\//, '').replace(/\/$/, ''),
+      domainRating: analysis.domainOverview.estimatedDR,
+      organicTraffic: analysis.domainOverview.estimatedTraffic,
+      backlinks: analysis.backlinks.estimatedTotal,
+      referringDomains: analysis.backlinks.estimatedReferringDomains,
+      aiReadabilityScore: analysis.aiReadability.overallScore,
+      semanticHtmlScore: analysis.aiReadability.semanticHTML,
+      schemaOrgScore: analysis.aiReadability.schemaOrg,
+      contentClarityScore: analysis.aiReadability.contentClarity,
+      topBacklinks: analysis.backlinks.topSources.map((source, i) => ({
+        id: `bl-${i}`,
+        sourceDomain: source.domain,
+        targetUrl: '/',
+        anchorText: source.context,
+        domainRating: source.dr,
+        doFollow: source.type === 'DoFollow',
+        firstSeen: '2024-01-01',
+        lastSeen: '2024-12-24',
+      })),
+      competitorOverlap: analysis.competitors.map(comp => ({
+        competitor: comp.domain,
+        sharedKeywords: Math.floor(comp.overlapScore * 50),
+        uniqueKeywords: Math.floor(comp.overlapScore * 150),
+        gap: Math.floor(comp.overlapScore * 100),
+      })),
+      strongKeywords: analysis.strengthKeywords.map(kw => ({
+        keyword: kw.keyword,
+        volume: kw.searchVolume,
+        rank: kw.estimatedRank,
+        aiVisibility: kw.aiVisibility,
+      })),
+      mainTopics: analysis.domainOverview.mainTopics,
+      targetAudience: analysis.domainOverview.targetAudience,
+      siteType: analysis.domainOverview.siteType,
+      improvements: analysis.improvements,
+    };
+  }, [domainAnalysisResult, searchUrl]);
 
   const aiReadabilityData = domainData ? [
     { subject: "セマンティックHTML", A: domainData.semanticHtmlScore, fullMark: 100 },
@@ -447,7 +394,7 @@ export default function DomainExplorer() {
   ] : [];
 
   const competitorData = domainData ? domainData.competitorOverlap.map((comp) => ({
-    name: comp.competitor.replace(".com", "").replace(".jp", "").replace(".co", ""),
+    name: comp.competitor.replace(".com", "").replace(".jp", "").replace(".co", "").substring(0, 15),
     shared: comp.sharedKeywords,
     gap: comp.gap,
   })) : [];
@@ -459,18 +406,31 @@ export default function DomainExplorer() {
     }
 
     setIsLoadingData(true);
-    setAnalyzedDomain(searchUrl.trim().replace(/^https?:\/\//, '').replace(/\/$/, ''));
+    setDomainAnalysisResult(null);
+    setLlmCitations(null);
+    setAiAnalysis(null);
     
-    // PageSpeed APIを呼び出してリアルデータを取得（可能な場合）
     try {
-      const url = searchUrl.startsWith('http') ? searchUrl : `https://${searchUrl}`;
-      await pageSpeedMutation.mutateAsync({ url });
+      // AI分析APIを呼び出し
+      const result = await fetchAndAnalyzeMutation.mutateAsync({
+        domain: searchUrl.trim().replace(/^https?:\/\//, '').replace(/\/$/, ''),
+      });
+
+      if (result.success && result.analysis) {
+        setDomainAnalysisResult(result.analysis as DomainAnalysisResult);
+        if (result.citations) {
+          setLlmCitations(result.citations as LLMCitationResult);
+        }
+        toast.success("AI分析が完了しました");
+      } else {
+        toast.error(result.error || "分析に失敗しました");
+      }
     } catch (error) {
-      console.log("PageSpeed API error (using simulated data):", error);
+      console.error("Analysis error:", error);
+      toast.error("分析中にエラーが発生しました");
+    } finally {
+      setIsLoadingData(false);
     }
-    
-    setIsLoadingData(false);
-    toast.success("ドメイン分析が完了しました");
   };
 
   const handleAnalyze = async () => {
@@ -615,7 +575,7 @@ export default function DomainExplorer() {
             ) : (
               <Search className="w-4 h-4" />
             )}
-            分析
+            AI分析
           </Button>
           {domainData && (
             <>
@@ -670,8 +630,8 @@ export default function DomainExplorer() {
               ドメインを入力して分析を開始
             </h3>
             <p className="text-muted-foreground max-w-md mx-auto">
-              分析したいドメイン（例: example.com）を入力して「分析」ボタンをクリックしてください。
-              被リンクプロファイル、AI可読性スコア、競合分析などの詳細データを取得できます。
+              分析したいドメイン（例: example.com）を入力して「AI分析」ボタンをクリックしてください。
+              AIがサイトを分析し、強みキーワード、競合、被リンクプロファイルなどを推定します。
             </p>
           </motion.div>
         )}
@@ -688,10 +648,12 @@ export default function DomainExplorer() {
           >
             <Loader2 className="w-16 h-16 text-[#22d3ee] mx-auto mb-4 animate-spin" />
             <h3 className="text-xl font-display font-bold text-foreground mb-2">
-              ドメインを分析中...
+              AIがドメインを分析中...
             </h3>
             <p className="text-muted-foreground">
-              被リンク、トラフィック、AI可読性スコアを取得しています
+              サイトコンテンツを取得し、SEO/LLMO指標を分析しています。
+              <br />
+              <span className="text-xs">（通常10〜30秒かかります）</span>
             </p>
           </motion.div>
         )}
@@ -699,7 +661,7 @@ export default function DomainExplorer() {
         {/* Domain Data Display */}
         {domainData && !isLoadingData && (
           <>
-            {/* Stats Grid */}
+            {/* Domain Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <motion.div
                 variants={itemVariants}
@@ -710,13 +672,13 @@ export default function DomainExplorer() {
                 }}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <Shield className="w-4 h-4 text-[#8b5cf6]" />
+                  <Globe className="w-4 h-4 text-[#8b5cf6]" />
                   <span className="text-xs text-muted-foreground font-mono">ドメインレーティング</span>
                 </div>
                 <p className="text-3xl font-display font-bold text-[#8b5cf6]">
                   {domainData.domainRating}
                 </p>
-                <Progress value={domainData.domainRating} className="mt-2 h-1" />
+                <p className="text-xs text-muted-foreground mt-1 font-mono">推定値 / 100</p>
               </motion.div>
 
               <motion.div
@@ -728,13 +690,13 @@ export default function DomainExplorer() {
                 }}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <BarChart3 className="w-4 h-4 text-[#22d3ee]" />
-                  <span className="text-xs text-muted-foreground font-mono">オーガニックトラフィック</span>
+                  <TrendingUp className="w-4 h-4 text-[#22d3ee]" />
+                  <span className="text-xs text-muted-foreground font-mono">月間トラフィック</span>
                 </div>
                 <p className="text-3xl font-display font-bold text-[#22d3ee]">
-                  {(domainData.organicTraffic / 1000).toFixed(0)}K
+                  {(domainData.organicTraffic / 1000).toFixed(1)}K
                 </p>
-                <p className="text-xs text-muted-foreground mt-1 font-mono">月間訪問数</p>
+                <p className="text-xs text-muted-foreground mt-1 font-mono">推定オーガニック</p>
               </motion.div>
 
               <motion.div
@@ -752,7 +714,7 @@ export default function DomainExplorer() {
                 <p className="text-3xl font-display font-bold text-[#ec4899]">
                   {(domainData.backlinks / 1000).toFixed(1)}K
                 </p>
-                <p className="text-xs text-muted-foreground mt-1 font-mono">総リンク数</p>
+                <p className="text-xs text-muted-foreground mt-1 font-mono">推定総数</p>
               </motion.div>
 
               <motion.div
@@ -774,6 +736,90 @@ export default function DomainExplorer() {
               </motion.div>
             </div>
 
+            {/* Site Info */}
+            {domainData.mainTopics && (
+              <motion.div
+                variants={itemVariants}
+                className="rounded-xl p-6"
+                style={{
+                  background: "linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(34, 211, 238, 0.05) 100%)",
+                  border: "1px solid rgba(139, 92, 246, 0.2)",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <Brain className="w-5 h-5 text-[#8b5cf6]" />
+                  <h2 className="text-lg font-display font-bold text-foreground">AI分析サマリー</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 rounded-lg bg-white/5">
+                    <h4 className="text-xs text-muted-foreground font-mono mb-2">サイトタイプ</h4>
+                    <p className="text-sm text-foreground">{domainData.siteType}</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-white/5">
+                    <h4 className="text-xs text-muted-foreground font-mono mb-2">ターゲット層</h4>
+                    <p className="text-sm text-foreground">{domainData.targetAudience}</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-white/5">
+                    <h4 className="text-xs text-muted-foreground font-mono mb-2">主要トピック</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {domainData.mainTopics.map((topic, i) => (
+                        <span key={i} className="text-xs px-2 py-0.5 rounded bg-[#8b5cf6]/20 text-[#8b5cf6]">
+                          {topic}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* LLM Citation Status */}
+            {llmCitations && (
+              <motion.div
+                variants={itemVariants}
+                className="rounded-xl p-6"
+                style={{
+                  background: "linear-gradient(135deg, rgba(34, 211, 238, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)",
+                  border: "1px solid rgba(34, 211, 238, 0.2)",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <Eye className="w-5 h-5 text-[#22d3ee]" />
+                  <h2 className="text-lg font-display font-bold text-foreground">LLM引用状況</h2>
+                  <span className="text-xs text-muted-foreground font-mono ml-auto">
+                    総合スコア: {llmCitations.overallVisibility}%
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {Object.entries(llmCitations.platforms).map(([platform, data]) => (
+                    <div key={platform} className="p-4 rounded-lg bg-white/5">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-bold text-foreground capitalize">{platform}</h4>
+                        <span className={cn(
+                          "text-xs px-2 py-0.5 rounded font-mono",
+                          data.score >= 70 ? "bg-[#22c55e]/20 text-[#22c55e]" :
+                          data.score >= 50 ? "bg-[#f59e0b]/20 text-[#f59e0b]" :
+                          "bg-[#ef4444]/20 text-[#ef4444]"
+                        )}>
+                          {data.score}%
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        センチメント: {data.sentiment === 'positive' ? '肯定的' : data.sentiment === 'negative' ? '否定的' : '中立'}
+                      </p>
+                      {data.mentions.length > 0 && (
+                        <div className="text-xs text-muted-foreground">
+                          {data.mentions.slice(0, 2).map((mention, i) => (
+                            <p key={i} className="truncate">• {mention}</p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
             {/* Strong Keywords Section */}
             <motion.div
               variants={itemVariants}
@@ -786,10 +832,10 @@ export default function DomainExplorer() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-[#8b5cf6]" />
-                  <h2 className="text-lg font-display font-bold text-foreground">強みキーワード</h2>
+                  <h2 className="text-lg font-display font-bold text-foreground">強みキーワード（AI推定）</h2>
                 </div>
                 <span className="text-xs text-muted-foreground font-mono">
-                  このドメインが上位表示しているキーワード
+                  このドメインが上位表示できそうなキーワード
                 </span>
               </div>
               <div className="overflow-x-auto">
@@ -797,8 +843,8 @@ export default function DomainExplorer() {
                   <thead>
                     <tr className="border-b border-border/50">
                       <th className="text-left py-3 text-xs font-mono text-muted-foreground">キーワード</th>
-                      <th className="text-center py-3 text-xs font-mono text-muted-foreground">検索ボリューム</th>
-                      <th className="text-center py-3 text-xs font-mono text-muted-foreground">Google順位</th>
+                      <th className="text-center py-3 text-xs font-mono text-muted-foreground">推定検索ボリューム</th>
+                      <th className="text-center py-3 text-xs font-mono text-muted-foreground">推定順位</th>
                       <th className="text-center py-3 text-xs font-mono text-muted-foreground">AI可視性</th>
                     </tr>
                   </thead>
@@ -918,10 +964,10 @@ export default function DomainExplorer() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Link2 className="w-5 h-5 text-[#22d3ee]" />
-                    <h2 className="text-lg font-display font-bold text-foreground">上位被リンク</h2>
+                    <h2 className="text-lg font-display font-bold text-foreground">推定被リンク元</h2>
                   </div>
-                  <span className="text-xs text-muted-foreground font-mono cursor-pointer hover:text-[#22d3ee] transition-colors flex items-center gap-1">
-                    すべて表示 <ArrowUpRight className="w-3 h-3" />
+                  <span className="text-xs text-muted-foreground font-mono">
+                    AI推定
                   </span>
                 </div>
 
@@ -930,7 +976,6 @@ export default function DomainExplorer() {
                     <thead>
                       <tr className="border-b border-border/50">
                         <th className="text-left py-3 text-xs font-mono text-muted-foreground">参照元ドメイン</th>
-                        <th className="text-left py-3 text-xs font-mono text-muted-foreground">ターゲットURL</th>
                         <th className="text-center py-3 text-xs font-mono text-muted-foreground">DR</th>
                         <th className="text-center py-3 text-xs font-mono text-muted-foreground">タイプ</th>
                       </tr>
@@ -950,33 +995,19 @@ export default function DomainExplorer() {
                               <ExternalLink className="w-3 h-3 text-muted-foreground" />
                             </div>
                           </td>
-                          <td className="py-3">
-                            <span className="text-sm text-muted-foreground font-mono">
-                              {link.targetUrl}
-                            </span>
-                          </td>
                           <td className="py-3 text-center">
-                            <span
-                              className={cn(
-                                "text-sm font-mono px-2 py-0.5 rounded",
-                                link.domainRating >= 90
-                                  ? "bg-[#22c55e]/20 text-[#22c55e]"
-                                  : link.domainRating >= 70
-                                  ? "bg-[#22d3ee]/20 text-[#22d3ee]"
-                                  : "bg-[#f59e0b]/20 text-[#f59e0b]"
-                              )}
-                            >
+                            <span className="text-sm font-mono text-[#22d3ee]">
                               {link.domainRating}
                             </span>
                           </td>
                           <td className="py-3 text-center">
                             {link.doFollow ? (
-                              <span className="flex items-center justify-center gap-1 text-xs text-[#22c55e]">
+                              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-[#22c55e]/20 text-[#22c55e]">
                                 <CheckCircle className="w-3 h-3" />
                                 DoFollow
                               </span>
                             ) : (
-                              <span className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-[#ef4444]/20 text-[#ef4444]">
                                 <XCircle className="w-3 h-3" />
                                 NoFollow
                               </span>
@@ -1001,7 +1032,7 @@ export default function DomainExplorer() {
             >
               <div className="flex items-center gap-2 mb-4">
                 <Users className="w-5 h-5 text-[#ec4899]" />
-                <h2 className="text-lg font-display font-bold text-foreground">競合キーワードギャップ分析</h2>
+                <h2 className="text-lg font-display font-bold text-foreground">競合分析（AI推定）</h2>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1085,6 +1116,43 @@ export default function DomainExplorer() {
                 </div>
               </div>
             </motion.div>
+
+            {/* Improvement Suggestions */}
+            {domainData.improvements && domainData.improvements.length > 0 && (
+              <motion.div
+                variants={itemVariants}
+                className="rounded-xl p-6"
+                style={{
+                  background: "linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%)",
+                  border: "1px solid rgba(34, 197, 94, 0.2)",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <Lightbulb className="w-5 h-5 text-[#22c55e]" />
+                  <h2 className="text-lg font-display font-bold text-foreground">AI改善提案</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {domainData.improvements.slice(0, 6).map((improvement, index) => (
+                    <div key={index} className="p-4 rounded-lg bg-white/5 border border-border/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={cn(
+                          "text-xs px-2 py-0.5 rounded font-mono",
+                          improvement.priority === "高" ? "bg-[#ef4444]/20 text-[#ef4444]" :
+                          improvement.priority === "中" ? "bg-[#f59e0b]/20 text-[#f59e0b]" :
+                          "bg-[#22c55e]/20 text-[#22c55e]"
+                        )}>
+                          {improvement.priority}
+                        </span>
+                        <span className="text-xs text-muted-foreground font-mono">{improvement.category}</span>
+                      </div>
+                      <h4 className="text-sm font-bold text-foreground mb-1">{improvement.title}</h4>
+                      <p className="text-xs text-muted-foreground mb-2">{improvement.description}</p>
+                      <p className="text-xs text-[#22c55e]">期待効果: {improvement.expectedImpact}</p>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
           </>
         )}
       </motion.div>

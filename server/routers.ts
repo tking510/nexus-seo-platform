@@ -21,6 +21,12 @@ import {
   syncPageSpeedData,
   calculateAIReadabilityScore,
 } from "./services/pageSpeedInsights";
+import {
+  analyzeDomainWithAI,
+  analyzeKeywordWithAI,
+  checkLLMCitationsWithAI,
+  generateImprovementSuggestions,
+} from "./services/aiSeoAnalyzer";
 
 // Google Search Console連携用のルーター
 const googleRouter = router({
@@ -691,6 +697,139 @@ AIセンチメント: ${input.aiSentiment}
     }),
 });
 
+// AI駆動のSEO分析ルーター
+const aiAnalysisRouter = router({
+  // ドメインをAIで深く分析
+  analyzeDomainDeep: publicProcedure
+    .input(z.object({
+      domain: z.string(),
+      siteContent: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        // サイトコンテンツが提供されていない場合、簡易的な説明を使用
+        const content = input.siteContent || `ドメイン ${input.domain} の分析`;
+        const result = await analyzeDomainWithAI(input.domain, content);
+        return { success: true, analysis: result };
+      } catch (error) {
+        console.error("AI domain analysis error:", error);
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  // キーワードをAIで分析
+  analyzeKeywordDeep: publicProcedure
+    .input(z.object({
+      keyword: z.string(),
+      targetDomain: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const result = await analyzeKeywordWithAI(input.keyword, input.targetDomain);
+        return { success: true, analysis: result };
+      } catch (error) {
+        console.error("AI keyword analysis error:", error);
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  // LLM引用状況をチェック
+  checkLLMCitations: publicProcedure
+    .input(z.object({
+      domain: z.string(),
+      keywords: z.array(z.string()),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const result = await checkLLMCitationsWithAI(input.domain, input.keywords);
+        return { success: true, citations: result };
+      } catch (error) {
+        console.error("LLM citation check error:", error);
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  // 改善提案を生成
+  generateImprovements: publicProcedure
+    .input(z.object({
+      domain: z.string(),
+      dr: z.number(),
+      traffic: z.number(),
+      keywords: z.array(z.object({
+        keyword: z.string(),
+        rank: z.number(),
+      })),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const suggestions = await generateImprovementSuggestions(
+          input.domain,
+          {
+            dr: input.dr,
+            traffic: input.traffic,
+            keywords: input.keywords,
+          }
+        );
+        return { success: true, suggestions };
+      } catch (error) {
+        console.error("Improvement suggestions error:", error);
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  // Webサイトのコンテンツを取得して分析
+  fetchAndAnalyzeDomain: publicProcedure
+    .input(z.object({
+      domain: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        // まずドメインのコンテンツを取得
+        const url = input.domain.startsWith('http') ? input.domain : `https://${input.domain}`;
+        let siteContent = '';
+        
+        try {
+          const response = await fetch(url, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (compatible; NexusSEOBot/1.0)',
+            },
+          });
+          if (response.ok) {
+            const html = await response.text();
+            // HTMLからテキストを抽出（簡易版）
+            siteContent = html
+              .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+              .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+              .replace(/<[^>]+>/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim()
+              .substring(0, 10000);
+          }
+        } catch (fetchError) {
+          console.log('Could not fetch site content, using domain name only');
+          siteContent = `ドメイン: ${input.domain}`;
+        }
+
+        // AIで分析
+        const analysis = await analyzeDomainWithAI(input.domain, siteContent);
+        
+        // LLM引用状況もチェック
+        const mainKeywords = analysis.strengthKeywords.slice(0, 5).map(k => k.keyword);
+        const citations = await checkLLMCitationsWithAI(input.domain, mainKeywords);
+
+        return {
+          success: true,
+          analysis,
+          citations,
+          fetchedContentLength: siteContent.length,
+        };
+      } catch (error) {
+        console.error("Fetch and analyze error:", error);
+        return { success: false, error: String(error) };
+      }
+    }),
+});
+
 // CSVエクスポート用のルーター
 const exportRouter = router({
   // キーワードデータをCSV形式で生成
@@ -842,6 +981,7 @@ export const appRouter = router({
   pageSpeed: pageSpeedRouter,
   seo: seoRouter,
   export: exportRouter,
+  aiAnalysis: aiAnalysisRouter,
 });
 
 export type AppRouter = typeof appRouter;

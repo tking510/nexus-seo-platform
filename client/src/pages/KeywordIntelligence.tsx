@@ -5,11 +5,12 @@
  * - Interactive data tables with filtering
  * - AI-powered improvement suggestions
  * - CSV export functionality
+ * - Dynamic keyword addition and search
  */
 
 import DashboardLayout from "@/components/DashboardLayout";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Search,
   Filter,
@@ -25,6 +26,8 @@ import {
   X,
   CheckCircle,
   AlertCircle,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import {
   AreaChart,
@@ -37,7 +40,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { keywordData, type KeywordData } from "@/lib/mockData";
+import { keywordData as initialKeywordData, type KeywordData } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +64,53 @@ const itemVariants = {
     y: 0,
   },
 };
+
+// 新しいキーワードのデータを動的に生成する関数
+function generateKeywordData(keyword: string): KeywordData {
+  const seed = keyword.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const random = (min: number, max: number) => {
+    const x = Math.sin(seed * 9999) * 10000;
+    return Math.floor((x - Math.floor(x)) * (max - min + 1)) + min;
+  };
+  
+  // キーワードの長さや特徴に基づいてデータを生成
+  const isLongTail = keyword.split(' ').length >= 3 || keyword.length > 15;
+  const isCommercial = ['買う', '購入', '価格', '料金', '比較', 'おすすめ', 'ランキング'].some(w => keyword.includes(w));
+  const isInformational = ['とは', '方法', 'やり方', '使い方', '意味', 'なぜ', 'どうやって'].some(w => keyword.includes(w));
+  
+  const baseVolume = isLongTail ? random(100, 5000) : random(5000, 100000);
+  const baseDifficulty = isLongTail ? random(10, 40) : random(40, 85);
+  
+  const intent = isCommercial ? 'commercial' : 
+                 isInformational ? 'informational' : 
+                 random(0, 1) === 0 ? 'transactional' : 'navigational';
+  
+  // 12ヶ月のトレンドデータを生成
+  const trend = Array.from({ length: 12 }, (_, i) => {
+    const seasonality = Math.sin((i + seed % 12) * Math.PI / 6) * 0.3 + 1;
+    return Math.floor(baseVolume * seasonality * (0.8 + random(0, 40) / 100));
+  });
+  
+  // SERP機能を生成
+  const allSerpFeatures = ['Featured Snippet', 'People Also Ask', 'Video', 'Image Pack', 'Knowledge Panel', 'Local Pack', 'Shopping'];
+  const serpFeatures = allSerpFeatures.filter(() => random(0, 2) === 0).slice(0, 3);
+  
+  return {
+    id: `kw-${Date.now()}-${seed}`,
+    keyword,
+    searchVolume: baseVolume,
+    keywordDifficulty: baseDifficulty,
+    cpc: parseFloat((random(50, 1500) / 100).toFixed(2)),
+    trend,
+    aiVisibility: {
+      chatgpt: random(20, 95),
+      perplexity: random(15, 90),
+      gemini: random(10, 85),
+    },
+    intent,
+    serpFeatures,
+  };
+}
 
 function KeywordTrendChart({ data }: { data: number[] }) {
   const chartData = data.map((value, index) => ({
@@ -111,7 +161,7 @@ function AIVisibilityBar({ chatgpt, perplexity, gemini }: { chatgpt: number; per
           title={`Gemini: ${gemini}%`}
         />
       </div>
-      <span className="text-xs font-mono text-muted-foreground w-10 text-right">
+      <span className="text-xs font-mono text-muted-foreground w-12 text-right">
         {Math.round((chatgpt + perplexity + gemini) / 3)}%
       </span>
     </div>
@@ -198,25 +248,25 @@ function AIAnalysisPanel({
 
       {/* 競争力分析 */}
       <div className="mb-6">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-3">
           <Target className="w-4 h-4 text-[#22d3ee]" />
           <h4 className="text-sm font-mono text-muted-foreground">競争力分析</h4>
           <span className={cn(
-            "text-xs font-mono px-2 py-0.5 rounded",
+            "text-xs font-mono px-2 py-0.5 rounded ml-auto",
             analysis.competitiveness.score === "高" ? "bg-[#ef4444]/20 text-[#ef4444]" :
             analysis.competitiveness.score === "中" ? "bg-[#f59e0b]/20 text-[#f59e0b]" :
             "bg-[#22c55e]/20 text-[#22c55e]"
           )}>
-            {analysis.competitiveness.score}
+            競争度: {analysis.competitiveness.score}
           </span>
         </div>
         <p className="text-sm text-muted-foreground">{analysis.competitiveness.analysis}</p>
       </div>
 
-      {/* AI最適化施策 */}
+      {/* AI可視性向上施策 */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 text-[#ec4899]" />
+          <Lightbulb className="w-4 h-4 text-[#f59e0b]" />
           <h4 className="text-sm font-mono text-muted-foreground">AI可視性向上施策</h4>
         </div>
         <ul className="space-y-2">
@@ -229,23 +279,23 @@ function AIAnalysisPanel({
         </ul>
       </div>
 
-      {/* コンテンツ推奨事項 */}
+      {/* コンテンツ最適化 */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
-          <Lightbulb className="w-4 h-4 text-[#f59e0b]" />
+          <AlertCircle className="w-4 h-4 text-[#ec4899]" />
           <h4 className="text-sm font-mono text-muted-foreground">コンテンツ最適化</h4>
         </div>
         <ul className="space-y-2">
           {analysis.contentRecommendations.map((item, index) => (
             <li key={index} className="flex items-start gap-2 text-sm text-foreground">
-              <AlertCircle className="w-4 h-4 text-[#f59e0b] mt-0.5 flex-shrink-0" />
+              <Sparkles className="w-4 h-4 text-[#ec4899] mt-0.5 flex-shrink-0" />
               <span>{item}</span>
             </li>
           ))}
         </ul>
       </div>
 
-      {/* 関連キーワード */}
+      {/* ターゲット推奨キーワード */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
           <TrendingUp className="w-4 h-4 text-[#8b5cf6]" />
@@ -401,7 +451,7 @@ function KeywordDetailPanel({
               "text-2xl font-display font-bold",
               keyword.keywordDifficulty >= 70
                 ? "text-[#ef4444]"
-                : keyword.keywordDifficulty >= 50
+                : keyword.keywordDifficulty >= 40
                 ? "text-[#f59e0b]"
                 : "text-[#22c55e]"
             )}
@@ -411,25 +461,26 @@ function KeywordDetailPanel({
         </div>
         <div className="p-4 rounded-lg bg-white/5 border border-border/50">
           <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="w-4 h-4 text-[#ec4899]" />
-            <span className="text-xs text-muted-foreground font-mono">クリック単価</span>
+            <DollarSign className="w-4 h-4 text-[#22c55e]" />
+            <span className="text-xs text-muted-foreground font-mono">CPC</span>
           </div>
-          <p className="text-2xl font-display font-bold text-foreground">
-            ${keyword.cpc.toFixed(2)}
+          <p className="text-2xl font-display font-bold text-[#22c55e]">
+            ${keyword.cpc}
           </p>
         </div>
         <div className="p-4 rounded-lg bg-white/5 border border-border/50">
           <div className="flex items-center gap-2 mb-1">
-            <Brain className="w-4 h-4 text-[#22c55e]" />
+            <Brain className="w-4 h-4 text-[#ec4899]" />
             <span className="text-xs text-muted-foreground font-mono">AI可視性</span>
           </div>
-          <p className="text-2xl font-display font-bold text-[#22c55e]">
+          <p className="text-2xl font-display font-bold text-[#ec4899]">
             {Math.round(
               (keyword.aiVisibility.chatgpt +
                 keyword.aiVisibility.perplexity +
                 keyword.aiVisibility.gemini) /
                 3
-            )}%
+            )}
+            %
           </p>
         </div>
       </div>
@@ -437,9 +488,9 @@ function KeywordDetailPanel({
       {/* Trend Chart */}
       <div>
         <h4 className="text-sm font-mono text-muted-foreground mb-3">
-          12ヶ月間の検索ボリューム推移
+          12ヶ月トレンド
         </h4>
-        <div className="h-[180px]">
+        <div className="h-[150px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={trendChartData}>
               <defs>
@@ -457,7 +508,6 @@ function KeywordDetailPanel({
               <YAxis
                 stroke="rgba(255,255,255,0.3)"
                 tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 10, fontFamily: "JetBrains Mono" }}
-                tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
               />
               <Tooltip
                 contentStyle={{
@@ -530,16 +580,59 @@ function KeywordDetailPanel({
 
 export default function KeywordIntelligence() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [newKeyword, setNewKeyword] = useState("");
+  const [keywords, setKeywords] = useState<KeywordData[]>(initialKeywordData);
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordData | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<KeywordAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isAddingKeyword, setIsAddingKeyword] = useState(false);
 
-  const filteredKeywords = keywordData.filter((kw) =>
-    kw.keyword.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // フィルタリングされたキーワード
+  const filteredKeywords = useMemo(() => {
+    if (!searchQuery.trim()) return keywords;
+    return keywords.filter((kw) =>
+      kw.keyword.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [keywords, searchQuery]);
 
   const analyzeKeywordMutation = trpc.seo.analyzeKeyword.useMutation();
   const exportCSVMutation = trpc.export.keywordsToCSV.useMutation();
+
+  // 新しいキーワードを追加
+  const handleAddKeyword = () => {
+    if (!newKeyword.trim()) {
+      toast.error("キーワードを入力してください");
+      return;
+    }
+
+    // 既存のキーワードと重複チェック
+    if (keywords.some(kw => kw.keyword.toLowerCase() === newKeyword.toLowerCase().trim())) {
+      toast.error("このキーワードは既に追加されています");
+      return;
+    }
+
+    setIsAddingKeyword(true);
+    
+    // 新しいキーワードデータを生成
+    const newKeywordData = generateKeywordData(newKeyword.trim());
+    setKeywords(prev => [newKeywordData, ...prev]);
+    setNewKeyword("");
+    setSelectedKeyword(newKeywordData);
+    
+    toast.success(`「${newKeyword.trim()}」を追加しました`);
+    setIsAddingKeyword(false);
+  };
+
+  // キーワードを削除
+  const handleDeleteKeyword = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setKeywords(prev => prev.filter(kw => kw.id !== id));
+    if (selectedKeyword?.id === id) {
+      setSelectedKeyword(null);
+      setAiAnalysis(null);
+    }
+    toast.success("キーワードを削除しました");
+  };
 
   const handleAnalyze = async () => {
     if (!selectedKeyword) return;
@@ -641,6 +734,45 @@ export default function KeywordIntelligence() {
           </div>
         </motion.div>
 
+        {/* Add Keyword Section */}
+        <motion.div 
+          variants={itemVariants} 
+          className="rounded-xl p-4"
+          style={{
+            background: "linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 211, 238, 0.05) 100%)",
+            border: "1px solid rgba(34, 197, 94, 0.2)",
+          }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Plus className="w-4 h-4 text-[#22c55e]" />
+            <span className="text-sm font-mono text-muted-foreground">新しいキーワードを追加</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex-1 relative">
+              <Input
+                type="text"
+                placeholder="分析したいキーワードを入力（例: SEO対策 方法）..."
+                value={newKeyword}
+                onChange={(e) => setNewKeyword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddKeyword()}
+                className="bg-white/5 border-border/50 font-mono"
+              />
+            </div>
+            <Button 
+              className="gap-2 bg-[#22c55e] hover:bg-[#22c55e]/80 text-black"
+              onClick={handleAddKeyword}
+              disabled={isAddingKeyword}
+            >
+              {isAddingKeyword ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
+              追加
+            </Button>
+          </div>
+        </motion.div>
+
         {/* Search and Filters */}
         <motion.div variants={itemVariants} className="flex items-center gap-4">
           <div className="flex-1 relative">
@@ -653,33 +785,28 @@ export default function KeywordIntelligence() {
               className="pl-10 bg-white/5 border-border/50 font-mono"
             />
           </div>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2 border-border/50">
             <Filter className="w-4 h-4" />
             フィルター
           </Button>
-          <Button 
-            variant="outline" 
-            className="gap-2"
+          <Button
+            variant="outline"
+            className="gap-2 border-border/50"
             onClick={handleExportCSV}
-            disabled={exportCSVMutation.isPending}
           >
-            {exportCSVMutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4" />
-            )}
-            CSVエクスポート
+            <Download className="w-4 h-4" />
+            CSV
           </Button>
         </motion.div>
 
-        {/* Main Content */}
+        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Keywords Table */}
+          {/* Keyword Table */}
           <motion.div
             variants={itemVariants}
-            className="lg:col-span-2 rounded-xl p-6"
+            className="lg:col-span-2 rounded-xl overflow-hidden"
             style={{
-              background: "linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(34, 211, 238, 0.05) 100%)",
+              background: "linear-gradient(135deg, rgba(26, 26, 46, 0.8) 0%, rgba(26, 26, 46, 0.6) 100%)",
               border: "1px solid rgba(139, 92, 246, 0.2)",
             }}
           >
@@ -687,85 +814,127 @@ export default function KeywordIntelligence() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border/50">
-                    <th className="text-left text-xs text-muted-foreground font-mono uppercase tracking-wider py-3 px-2">
+                    <th className="text-left p-4 text-xs font-mono text-muted-foreground uppercase tracking-wider">
                       キーワード
                     </th>
-                    <th className="text-right text-xs text-muted-foreground font-mono uppercase tracking-wider py-3 px-2">
+                    <th className="text-center p-4 text-xs font-mono text-muted-foreground uppercase tracking-wider">
                       ボリューム
                     </th>
-                    <th className="text-right text-xs text-muted-foreground font-mono uppercase tracking-wider py-3 px-2">
-                      難易度
+                    <th className="text-center p-4 text-xs font-mono text-muted-foreground uppercase tracking-wider">
+                      KD
                     </th>
-                    <th className="text-right text-xs text-muted-foreground font-mono uppercase tracking-wider py-3 px-2">
+                    <th className="text-center p-4 text-xs font-mono text-muted-foreground uppercase tracking-wider">
                       CPC
                     </th>
-                    <th className="text-center text-xs text-muted-foreground font-mono uppercase tracking-wider py-3 px-2">
+                    <th className="text-center p-4 text-xs font-mono text-muted-foreground uppercase tracking-wider">
                       トレンド
                     </th>
-                    <th className="text-left text-xs text-muted-foreground font-mono uppercase tracking-wider py-3 px-2">
+                    <th className="text-left p-4 text-xs font-mono text-muted-foreground uppercase tracking-wider">
                       AI可視性
+                    </th>
+                    <th className="text-center p-4 text-xs font-mono text-muted-foreground uppercase tracking-wider">
+                      操作
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredKeywords.map((kw) => (
-                    <tr
-                      key={kw.id}
-                      onClick={() => {
-                        setSelectedKeyword(kw);
-                        setAiAnalysis(null);
-                      }}
-                      className={cn(
-                        "border-b border-border/30 cursor-pointer transition-colors",
-                        selectedKeyword?.id === kw.id
-                          ? "bg-[#8b5cf6]/10"
-                          : "hover:bg-white/5"
-                      )}
-                    >
-                      <td className="py-4 px-2">
-                        <div className="flex items-center gap-2">
-                          <Search className="w-4 h-4 text-[#8b5cf6]" />
-                          <span className="text-sm text-foreground font-medium">
-                            {kw.keyword}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="text-right py-4 px-2">
-                        <span className="text-sm text-foreground font-mono">
-                          {kw.searchVolume.toLocaleString()}
-                        </span>
-                      </td>
-                      <td className="text-right py-4 px-2">
-                        <span
-                          className={cn(
-                            "text-sm font-mono px-2 py-0.5 rounded",
-                            kw.keywordDifficulty >= 70
-                              ? "bg-[#ef4444]/20 text-[#ef4444]"
-                              : kw.keywordDifficulty >= 50
-                              ? "bg-[#f59e0b]/20 text-[#f59e0b]"
-                              : "bg-[#22c55e]/20 text-[#22c55e]"
-                          )}
-                        >
-                          {kw.keywordDifficulty}
-                        </span>
-                      </td>
-                      <td className="text-right py-4 px-2">
-                        <span className="text-sm text-foreground font-mono">
-                          ${kw.cpc.toFixed(2)}
-                        </span>
-                      </td>
-                      <td className="py-4 px-2">
-                        <KeywordTrendChart data={kw.trend} />
-                      </td>
-                      <td className="py-4 px-2 w-40">
-                        <AIVisibilityBar
-                          chatgpt={kw.aiVisibility.chatgpt}
-                          perplexity={kw.aiVisibility.perplexity}
-                          gemini={kw.aiVisibility.gemini}
-                        />
+                  {filteredKeywords.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                        {searchQuery ? (
+                          <div>
+                            <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p>「{searchQuery}」に一致するキーワードが見つかりません</p>
+                            <p className="text-sm mt-1">上の「新しいキーワードを追加」から追加できます</p>
+                          </div>
+                        ) : (
+                          <div>
+                            <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p>キーワードがありません</p>
+                            <p className="text-sm mt-1">上の入力欄からキーワードを追加してください</p>
+                          </div>
+                        )}
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredKeywords.map((kw) => (
+                      <tr
+                        key={kw.id}
+                        onClick={() => {
+                          setSelectedKeyword(kw);
+                          setAiAnalysis(null);
+                        }}
+                        className={cn(
+                          "border-b border-border/30 cursor-pointer transition-all",
+                          selectedKeyword?.id === kw.id
+                            ? "bg-[#8b5cf6]/10"
+                            : "hover:bg-white/5"
+                        )}
+                      >
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-foreground">
+                              {kw.keyword}
+                            </span>
+                            <span
+                              className={cn(
+                                "text-[10px] font-mono px-1.5 py-0.5 rounded uppercase",
+                                kw.intent === "transactional"
+                                  ? "bg-[#22c55e]/20 text-[#22c55e]"
+                                  : kw.intent === "commercial"
+                                  ? "bg-[#f59e0b]/20 text-[#f59e0b]"
+                                  : kw.intent === "informational"
+                                  ? "bg-[#22d3ee]/20 text-[#22d3ee]"
+                                  : "bg-[#8b5cf6]/20 text-[#8b5cf6]"
+                              )}
+                            >
+                              {kw.intent.slice(0, 4)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-4 text-center">
+                          <span className="text-sm font-mono text-foreground">
+                            {kw.searchVolume.toLocaleString()}
+                          </span>
+                        </td>
+                        <td className="p-4 text-center">
+                          <span
+                            className={cn(
+                              "text-sm font-mono px-2 py-0.5 rounded",
+                              kw.keywordDifficulty >= 70
+                                ? "bg-[#ef4444]/20 text-[#ef4444]"
+                                : kw.keywordDifficulty >= 40
+                                ? "bg-[#f59e0b]/20 text-[#f59e0b]"
+                                : "bg-[#22c55e]/20 text-[#22c55e]"
+                            )}
+                          >
+                            {kw.keywordDifficulty}
+                          </span>
+                        </td>
+                        <td className="p-4 text-center">
+                          <span className="text-sm font-mono text-foreground">
+                            ${kw.cpc}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <KeywordTrendChart data={kw.trend} />
+                        </td>
+                        <td className="p-4">
+                          <AIVisibilityBar {...kw.aiVisibility} />
+                        </td>
+                        <td className="p-4 text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-[#ef4444] hover:bg-[#ef4444]/10"
+                            onClick={(e) => handleDeleteKeyword(kw.id, e)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -776,12 +945,12 @@ export default function KeywordIntelligence() {
             variants={itemVariants}
             className="rounded-xl p-6"
             style={{
-              background: "linear-gradient(135deg, rgba(34, 211, 238, 0.1) 0%, rgba(236, 72, 153, 0.05) 100%)",
-              border: "1px solid rgba(34, 211, 238, 0.2)",
+              background: "linear-gradient(135deg, rgba(26, 26, 46, 0.8) 0%, rgba(26, 26, 46, 0.6) 100%)",
+              border: "1px solid rgba(139, 92, 246, 0.2)",
             }}
           >
-            <KeywordDetailPanel 
-              keyword={selectedKeyword} 
+            <KeywordDetailPanel
+              keyword={selectedKeyword}
               onAnalyze={handleAnalyze}
               isAnalyzing={isAnalyzing}
             />
@@ -790,7 +959,7 @@ export default function KeywordIntelligence() {
 
         {/* AI Analysis Panel */}
         <AnimatePresence>
-          {(aiAnalysis || isAnalyzing) && (
+          {(isAnalyzing || aiAnalysis) && (
             <AIAnalysisPanel
               analysis={aiAnalysis}
               isLoading={isAnalyzing}

@@ -3,10 +3,12 @@
  * - Hybrid rank tracking (Google + AI)
  * - Side-by-side comparison view
  * - Alert system for ranking changes
+ * - AI-powered improvement suggestions
+ * - CSV export functionality
  */
 
 import DashboardLayout from "@/components/DashboardLayout";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import {
   TrendingUp,
@@ -22,6 +24,12 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Calendar,
+  Download,
+  Loader2,
+  Brain,
+  Target,
+  Lightbulb,
+  X,
 } from "lucide-react";
 import {
   LineChart,
@@ -38,6 +46,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -216,9 +226,196 @@ function RankingDetailChart({ ranking }: { ranking: RankingData }) {
   );
 }
 
+// AI分析結果の型定義
+interface RankingAnalysis {
+  summary: string;
+  currentPerformance: {
+    googleScore: string;
+    aiScore: string;
+    overallAssessment: string;
+  };
+  googleImprovements: string[];
+  aiCitationStrategy: string[];
+  sentimentOptimization: string[];
+  goals: {
+    shortTerm: string;
+    midTerm: string;
+    longTerm: string;
+  };
+}
+
+function AIAnalysisPanel({ 
+  analysis, 
+  isLoading, 
+  onClose 
+}: { 
+  analysis: RankingAnalysis | null; 
+  isLoading: boolean;
+  onClose: () => void;
+}) {
+  if (isLoading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-xl p-6 mt-4"
+        style={{
+          background: "linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%)",
+          border: "1px solid rgba(236, 72, 153, 0.3)",
+        }}
+      >
+        <div className="flex items-center justify-center gap-3 py-8">
+          <Loader2 className="w-6 h-6 text-[#ec4899] animate-spin" />
+          <span className="text-muted-foreground font-mono">AIが順位データを分析中...</span>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (!analysis) return null;
+
+  const getScoreColor = (score: string) => {
+    switch (score) {
+      case "優秀": return "text-[#22c55e]";
+      case "良好": return "text-[#22d3ee]";
+      case "要改善": return "text-[#f59e0b]";
+      case "危険": return "text-[#ef4444]";
+      default: return "text-foreground";
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="rounded-xl p-6 mt-4 relative"
+      style={{
+        background: "linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%)",
+        border: "1px solid rgba(236, 72, 153, 0.3)",
+      }}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 p-1 rounded-full hover:bg-white/10 transition-colors"
+      >
+        <X className="w-4 h-4 text-muted-foreground" />
+      </button>
+
+      <div className="flex items-center gap-2 mb-4">
+        <Brain className="w-5 h-5 text-[#ec4899]" />
+        <h3 className="text-lg font-display font-bold text-foreground">AI改善提案</h3>
+      </div>
+
+      {/* サマリー */}
+      <div className="mb-6 p-4 rounded-lg bg-white/5 border border-border/50">
+        <p className="text-sm text-foreground">{analysis.summary}</p>
+      </div>
+
+      {/* 現在のパフォーマンス */}
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="p-4 rounded-lg bg-white/5 border border-border/50 text-center">
+          <Globe className="w-5 h-5 text-[#8b5cf6] mx-auto mb-2" />
+          <p className={cn("text-lg font-bold", getScoreColor(analysis.currentPerformance.googleScore))}>
+            {analysis.currentPerformance.googleScore}
+          </p>
+          <p className="text-xs text-muted-foreground font-mono">Google評価</p>
+        </div>
+        <div className="p-4 rounded-lg bg-white/5 border border-border/50 text-center">
+          <Bot className="w-5 h-5 text-[#22d3ee] mx-auto mb-2" />
+          <p className={cn("text-lg font-bold", getScoreColor(analysis.currentPerformance.aiScore))}>
+            {analysis.currentPerformance.aiScore}
+          </p>
+          <p className="text-xs text-muted-foreground font-mono">AI評価</p>
+        </div>
+        <div className="p-4 rounded-lg bg-white/5 border border-border/50">
+          <p className="text-sm text-foreground">{analysis.currentPerformance.overallAssessment}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Google順位改善 */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp className="w-4 h-4 text-[#8b5cf6]" />
+            <h4 className="text-sm font-mono text-muted-foreground">Google順位改善</h4>
+          </div>
+          <ul className="space-y-2">
+            {analysis.googleImprovements.map((item, index) => (
+              <li key={index} className="flex items-start gap-2 text-sm text-foreground">
+                <CheckCircle className="w-4 h-4 text-[#8b5cf6] mt-0.5 flex-shrink-0" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* AI引用戦略 */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Bot className="w-4 h-4 text-[#22d3ee]" />
+            <h4 className="text-sm font-mono text-muted-foreground">AI引用戦略</h4>
+          </div>
+          <ul className="space-y-2">
+            {analysis.aiCitationStrategy.map((item, index) => (
+              <li key={index} className="flex items-start gap-2 text-sm text-foreground">
+                <Target className="w-4 h-4 text-[#22d3ee] mt-0.5 flex-shrink-0" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* センチメント最適化 */}
+      <div className="mt-6">
+        <div className="flex items-center gap-2 mb-3">
+          <Lightbulb className="w-4 h-4 text-[#f59e0b]" />
+          <h4 className="text-sm font-mono text-muted-foreground">センチメント改善</h4>
+        </div>
+        <ul className="space-y-2">
+          {analysis.sentimentOptimization.map((item, index) => (
+            <li key={index} className="flex items-start gap-2 text-sm text-foreground">
+              <Lightbulb className="w-4 h-4 text-[#f59e0b] mt-0.5 flex-shrink-0" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* 目標設定 */}
+      <div className="mt-6 p-4 rounded-lg bg-[#ec4899]/10 border border-[#ec4899]/30">
+        <div className="flex items-center gap-2 mb-3">
+          <Target className="w-4 h-4 text-[#ec4899]" />
+          <h4 className="text-sm font-mono text-foreground">目標設定</h4>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">短期（1-3ヶ月）</p>
+            <p className="text-sm text-foreground">{analysis.goals.shortTerm}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">中期（3-6ヶ月）</p>
+            <p className="text-sm text-foreground">{analysis.goals.midTerm}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">長期（6-12ヶ月）</p>
+            <p className="text-sm text-foreground">{analysis.goals.longTerm}</p>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function RankTracking() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRanking, setSelectedRanking] = useState<RankingData | null>(rankingData[0]);
+  const [aiAnalysis, setAiAnalysis] = useState<RankingAnalysis | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const analyzeRankingMutation = trpc.seo.analyzeRanking.useMutation();
+  const exportCSVMutation = trpc.export.rankingsToCSV.useMutation();
 
   const filteredRankings = rankingData.filter((r) =>
     r.keyword.toLowerCase().includes(searchQuery.toLowerCase())
@@ -233,6 +430,65 @@ export default function RankTracking() {
   const aiCited = rankingData.filter(
     (r) => r.aiCitations.chatgpt || r.aiCitations.perplexity || r.aiCitations.gemini
   ).length;
+
+  const handleAnalyze = async () => {
+    if (!selectedRanking) return;
+
+    setIsAnalyzing(true);
+    setAiAnalysis(null);
+
+    try {
+      const result = await analyzeRankingMutation.mutateAsync({
+        keyword: selectedRanking.keyword,
+        googleRank: selectedRanking.googleRank,
+        googleRankChange: selectedRanking.googleRankChange,
+        aiCitations: selectedRanking.aiCitations,
+        aiSentiment: selectedRanking.aiSentiment,
+        url: selectedRanking.url,
+      });
+
+      if (result.success && result.analysis) {
+        setAiAnalysis(result.analysis as RankingAnalysis);
+        toast.success("AI分析が完了しました");
+      } else {
+        toast.error("分析に失敗しました");
+      }
+    } catch (error) {
+      console.error("Analysis error:", error);
+      toast.error("分析中にエラーが発生しました");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const result = await exportCSVMutation.mutateAsync({
+        rankings: filteredRankings.map(r => ({
+          keyword: r.keyword,
+          googleRank: r.googleRank,
+          googleRankChange: r.googleRankChange,
+          aiCitations: r.aiCitations,
+          aiSentiment: r.aiSentiment,
+          url: r.url,
+          lastUpdated: r.lastUpdated,
+        })),
+      });
+
+      // CSVをダウンロード
+      const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = result.filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+
+      toast.success("CSVエクスポートが完了しました");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("エクスポートに失敗しました");
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -359,6 +615,19 @@ export default function RankTracking() {
             <Bell className="w-4 h-4" />
             アラート
           </Button>
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={handleExportCSV}
+            disabled={exportCSVMutation.isPending}
+          >
+            {exportCSVMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            CSVエクスポート
+          </Button>
         </motion.div>
 
         {/* Main Content */}
@@ -414,7 +683,10 @@ export default function RankTracking() {
                       {filteredRankings.map((ranking) => (
                         <tr
                           key={ranking.id}
-                          onClick={() => setSelectedRanking(ranking)}
+                          onClick={() => {
+                            setSelectedRanking(ranking);
+                            setAiAnalysis(null);
+                          }}
                           className={cn(
                             "border-b border-border/30 cursor-pointer transition-colors",
                             selectedRanking?.id === ranking.id
@@ -517,6 +789,25 @@ export default function RankTracking() {
                   </p>
                 </div>
 
+                {/* AI Analysis Button */}
+                <Button
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing}
+                  className="w-full gap-2 bg-gradient-to-r from-[#ec4899] to-[#8b5cf6] hover:from-[#db2777] hover:to-[#7c3aed] text-white border-0"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      分析中...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="w-4 h-4" />
+                      AI改善提案を取得
+                    </>
+                  )}
+                </Button>
+
                 {/* Current Status */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 rounded-lg bg-white/5 border border-border/50 text-center">
@@ -591,6 +882,17 @@ export default function RankTracking() {
             )}
           </motion.div>
         </div>
+
+        {/* AI Analysis Panel */}
+        <AnimatePresence>
+          {(aiAnalysis || isAnalyzing) && (
+            <AIAnalysisPanel
+              analysis={aiAnalysis}
+              isLoading={isAnalyzing}
+              onClose={() => setAiAnalysis(null)}
+            />
+          )}
+        </AnimatePresence>
       </motion.div>
     </DashboardLayout>
   );

@@ -3,10 +3,12 @@
  * - Domain analysis with backlink profile
  * - AI-Readability audit scores
  * - Competitor gap analysis
+ * - AI-powered improvement suggestions
+ * - CSV export functionality
  */
 
 import DashboardLayout from "@/components/DashboardLayout";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import {
   Globe,
@@ -21,6 +23,13 @@ import {
   ArrowUpRight,
   BarChart3,
   Users,
+  Download,
+  Loader2,
+  Lightbulb,
+  Target,
+  X,
+  AlertCircle,
+  TrendingUp,
 } from "lucide-react";
 import {
   BarChart,
@@ -41,6 +50,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -98,8 +109,202 @@ function ScoreGauge({ score, label, color }: { score: number; label: string; col
   );
 }
 
+// AI分析結果の型定義
+interface DomainAnalysis {
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  technicalImprovements: Array<{
+    area: string;
+    action: string;
+    impact: string;
+  }>;
+  backlinkStrategy: string[];
+  differentiationPoints: string[];
+  priorityActions: Array<{
+    action: string;
+    priority: number;
+    effort: string;
+    expectedImpact: string;
+  }>;
+}
+
+function AIAnalysisPanel({ 
+  analysis, 
+  isLoading, 
+  onClose 
+}: { 
+  analysis: DomainAnalysis | null; 
+  isLoading: boolean;
+  onClose: () => void;
+}) {
+  if (isLoading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-xl p-6"
+        style={{
+          background: "linear-gradient(135deg, rgba(34, 211, 238, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%)",
+          border: "1px solid rgba(34, 211, 238, 0.3)",
+        }}
+      >
+        <div className="flex items-center justify-center gap-3 py-8">
+          <Loader2 className="w-6 h-6 text-[#22d3ee] animate-spin" />
+          <span className="text-muted-foreground font-mono">AIがドメインを分析中...</span>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (!analysis) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="rounded-xl p-6 relative"
+      style={{
+        background: "linear-gradient(135deg, rgba(34, 211, 238, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%)",
+        border: "1px solid rgba(34, 211, 238, 0.3)",
+      }}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 p-1 rounded-full hover:bg-white/10 transition-colors"
+      >
+        <X className="w-4 h-4 text-muted-foreground" />
+      </button>
+
+      <div className="flex items-center gap-2 mb-4">
+        <Brain className="w-5 h-5 text-[#22d3ee]" />
+        <h3 className="text-lg font-display font-bold text-foreground">AI改善提案</h3>
+      </div>
+
+      {/* サマリー */}
+      <div className="mb-6 p-4 rounded-lg bg-white/5 border border-border/50">
+        <p className="text-sm text-foreground">{analysis.summary}</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 強み */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle className="w-4 h-4 text-[#22c55e]" />
+            <h4 className="text-sm font-mono text-muted-foreground">強み</h4>
+          </div>
+          <ul className="space-y-2">
+            {analysis.strengths.map((item, index) => (
+              <li key={index} className="flex items-start gap-2 text-sm text-foreground">
+                <TrendingUp className="w-4 h-4 text-[#22c55e] mt-0.5 flex-shrink-0" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* 弱み */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <AlertCircle className="w-4 h-4 text-[#f59e0b]" />
+            <h4 className="text-sm font-mono text-muted-foreground">改善点</h4>
+          </div>
+          <ul className="space-y-2">
+            {analysis.weaknesses.map((item, index) => (
+              <li key={index} className="flex items-start gap-2 text-sm text-foreground">
+                <XCircle className="w-4 h-4 text-[#f59e0b] mt-0.5 flex-shrink-0" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* 技術的改善点 */}
+      <div className="mt-6">
+        <div className="flex items-center gap-2 mb-3">
+          <Target className="w-4 h-4 text-[#8b5cf6]" />
+          <h4 className="text-sm font-mono text-muted-foreground">技術的改善点</h4>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {analysis.technicalImprovements.map((item, index) => (
+            <div key={index} className="p-3 rounded-lg bg-white/5 border border-border/50">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-mono text-[#8b5cf6]">{item.area}</span>
+                <span className={cn(
+                  "text-xs font-mono px-2 py-0.5 rounded",
+                  item.impact === "高" ? "bg-[#22c55e]/20 text-[#22c55e]" :
+                  item.impact === "中" ? "bg-[#f59e0b]/20 text-[#f59e0b]" :
+                  "bg-[#ef4444]/20 text-[#ef4444]"
+                )}>
+                  影響度: {item.impact}
+                </span>
+              </div>
+              <p className="text-sm text-foreground">{item.action}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 被リンク戦略 */}
+      <div className="mt-6">
+        <div className="flex items-center gap-2 mb-3">
+          <Link2 className="w-4 h-4 text-[#ec4899]" />
+          <h4 className="text-sm font-mono text-muted-foreground">被リンク戦略</h4>
+        </div>
+        <ul className="space-y-2">
+          {analysis.backlinkStrategy.map((item, index) => (
+            <li key={index} className="flex items-start gap-2 text-sm text-foreground">
+              <Lightbulb className="w-4 h-4 text-[#ec4899] mt-0.5 flex-shrink-0" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* 優先アクション */}
+      <div className="mt-6 p-4 rounded-lg bg-[#22d3ee]/10 border border-[#22d3ee]/30">
+        <div className="flex items-center gap-2 mb-3">
+          <Target className="w-4 h-4 text-[#22d3ee]" />
+          <h4 className="text-sm font-mono text-foreground">優先アクション（優先度順）</h4>
+        </div>
+        <div className="space-y-3">
+          {analysis.priorityActions.sort((a, b) => a.priority - b.priority).map((item, index) => (
+            <div key={index} className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#22d3ee]/20 flex items-center justify-center text-xs font-bold text-[#22d3ee]">
+                {item.priority}
+              </span>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">{item.action}</p>
+                <div className="flex items-center gap-4 mt-1">
+                  <span className="text-xs text-muted-foreground">
+                    工数: <span className={cn(
+                      item.effort === "高" ? "text-[#ef4444]" :
+                      item.effort === "中" ? "text-[#f59e0b]" :
+                      "text-[#22c55e]"
+                    )}>{item.effort}</span>
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    期待効果: {item.expectedImpact}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function DomainExplorer() {
   const [searchUrl, setSearchUrl] = useState("example.com");
+  const [aiAnalysis, setAiAnalysis] = useState<DomainAnalysis | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const analyzeDomainMutation = trpc.seo.analyzeDomain.useMutation();
+  const exportCSVMutation = trpc.export.domainToCSV.useMutation();
 
   const aiReadabilityData = [
     { subject: "セマンティックHTML", A: domainData.semanticHtmlScore, fullMark: 100 },
@@ -113,6 +318,73 @@ export default function DomainExplorer() {
     shared: comp.sharedKeywords,
     gap: comp.gap,
   }));
+
+  const handleAnalyze = async () => {
+    setIsAnalyzing(true);
+    setAiAnalysis(null);
+
+    try {
+      const result = await analyzeDomainMutation.mutateAsync({
+        domain: searchUrl,
+        domainRating: domainData.domainRating,
+        organicTraffic: domainData.organicTraffic,
+        backlinks: domainData.backlinks,
+        referringDomains: domainData.referringDomains,
+        aiReadabilityScore: domainData.aiReadabilityScore,
+        semanticHtmlScore: domainData.semanticHtmlScore,
+        schemaOrgScore: domainData.schemaOrgScore,
+        contentClarityScore: domainData.contentClarityScore,
+      });
+
+      if (result.success && result.analysis) {
+        setAiAnalysis(result.analysis as DomainAnalysis);
+        toast.success("AI分析が完了しました");
+      } else {
+        toast.error("分析に失敗しました");
+      }
+    } catch (error) {
+      console.error("Analysis error:", error);
+      toast.error("分析中にエラーが発生しました");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const result = await exportCSVMutation.mutateAsync({
+        domain: searchUrl,
+        domainRating: domainData.domainRating,
+        organicTraffic: domainData.organicTraffic,
+        backlinks: domainData.backlinks,
+        referringDomains: domainData.referringDomains,
+        aiReadabilityScore: domainData.aiReadabilityScore,
+        semanticHtmlScore: domainData.semanticHtmlScore,
+        schemaOrgScore: domainData.schemaOrgScore,
+        contentClarityScore: domainData.contentClarityScore,
+        topBacklinks: domainData.topBacklinks.map(bl => ({
+          sourceDomain: bl.sourceDomain,
+          targetUrl: bl.targetUrl,
+          anchorText: bl.anchorText,
+          domainRating: bl.domainRating,
+          doFollow: bl.doFollow,
+        })),
+      });
+
+      // CSVをダウンロード
+      const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = result.filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+
+      toast.success("CSVエクスポートが完了しました");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("エクスポートに失敗しました");
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -168,11 +440,45 @@ export default function DomainExplorer() {
               className="pl-10 bg-white/5 border-border/50 font-mono"
             />
           </div>
-          <Button className="gap-2 bg-[#22d3ee] hover:bg-[#22d3ee]/80 text-black">
-            <Search className="w-4 h-4" />
+          <Button 
+            className="gap-2 bg-[#22d3ee] hover:bg-[#22d3ee]/80 text-black"
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+          >
+            {isAnalyzing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Search className="w-4 h-4" />
+            )}
             分析
           </Button>
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={handleExportCSV}
+            disabled={exportCSVMutation.isPending}
+          >
+            {exportCSVMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            CSVエクスポート
+          </Button>
         </motion.div>
+
+        {/* AI Analysis Panel */}
+        <AnimatePresence>
+          {(aiAnalysis || isAnalyzing) && (
+            <motion.div variants={itemVariants}>
+              <AIAnalysisPanel
+                analysis={aiAnalysis}
+                isLoading={isAnalyzing}
+                onClose={() => setAiAnalysis(null)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Domain Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

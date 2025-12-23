@@ -8,8 +8,8 @@ import Home from "./pages/Home";
 import KeywordIntelligence from "./pages/KeywordIntelligence";
 import DomainExplorer from "./pages/DomainExplorer";
 import RankTracking from "./pages/RankTracking";
-
 function Router() {
+  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />

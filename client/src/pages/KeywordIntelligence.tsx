@@ -3,10 +3,12 @@
  * - Keyword analysis with SEO + LLMO metrics
  * - Trend visualization and AI visibility tracking
  * - Interactive data tables with filtering
+ * - AI-powered improvement suggestions
+ * - CSV export functionality
  */
 
 import DashboardLayout from "@/components/DashboardLayout";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import {
   Search,
@@ -17,6 +19,12 @@ import {
   DollarSign,
   BarChart3,
   Brain,
+  Loader2,
+  Lightbulb,
+  TrendingUp,
+  X,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import {
   AreaChart,
@@ -33,6 +41,8 @@ import { keywordData, type KeywordData } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -108,7 +118,184 @@ function AIVisibilityBar({ chatgpt, perplexity, gemini }: { chatgpt: number; per
   );
 }
 
-function KeywordDetailPanel({ keyword }: { keyword: KeywordData | null }) {
+// AI分析結果の型定義
+interface KeywordAnalysis {
+  summary: string;
+  competitiveness: {
+    score: string;
+    analysis: string;
+  };
+  aiOptimization: string[];
+  contentRecommendations: string[];
+  relatedKeywords: Array<{
+    keyword: string;
+    reason: string;
+  }>;
+  priority: {
+    level: string;
+    expectedOutcome: string;
+    timeframe: string;
+  };
+}
+
+function AIAnalysisPanel({ 
+  analysis, 
+  isLoading, 
+  onClose 
+}: { 
+  analysis: KeywordAnalysis | null; 
+  isLoading: boolean;
+  onClose: () => void;
+}) {
+  if (isLoading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-xl p-6 mt-4"
+        style={{
+          background: "linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(34, 211, 238, 0.1) 100%)",
+          border: "1px solid rgba(139, 92, 246, 0.3)",
+        }}
+      >
+        <div className="flex items-center justify-center gap-3 py-8">
+          <Loader2 className="w-6 h-6 text-[#8b5cf6] animate-spin" />
+          <span className="text-muted-foreground font-mono">AIが分析中...</span>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (!analysis) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="rounded-xl p-6 mt-4 relative"
+      style={{
+        background: "linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(34, 211, 238, 0.1) 100%)",
+        border: "1px solid rgba(139, 92, 246, 0.3)",
+      }}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 p-1 rounded-full hover:bg-white/10 transition-colors"
+      >
+        <X className="w-4 h-4 text-muted-foreground" />
+      </button>
+
+      <div className="flex items-center gap-2 mb-4">
+        <Brain className="w-5 h-5 text-[#8b5cf6]" />
+        <h3 className="text-lg font-display font-bold text-foreground">AI改善提案</h3>
+      </div>
+
+      {/* サマリー */}
+      <div className="mb-6 p-4 rounded-lg bg-white/5 border border-border/50">
+        <p className="text-sm text-foreground">{analysis.summary}</p>
+      </div>
+
+      {/* 競争力分析 */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <Target className="w-4 h-4 text-[#22d3ee]" />
+          <h4 className="text-sm font-mono text-muted-foreground">競争力分析</h4>
+          <span className={cn(
+            "text-xs font-mono px-2 py-0.5 rounded",
+            analysis.competitiveness.score === "高" ? "bg-[#ef4444]/20 text-[#ef4444]" :
+            analysis.competitiveness.score === "中" ? "bg-[#f59e0b]/20 text-[#f59e0b]" :
+            "bg-[#22c55e]/20 text-[#22c55e]"
+          )}>
+            {analysis.competitiveness.score}
+          </span>
+        </div>
+        <p className="text-sm text-muted-foreground">{analysis.competitiveness.analysis}</p>
+      </div>
+
+      {/* AI最適化施策 */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="w-4 h-4 text-[#ec4899]" />
+          <h4 className="text-sm font-mono text-muted-foreground">AI可視性向上施策</h4>
+        </div>
+        <ul className="space-y-2">
+          {analysis.aiOptimization.map((item, index) => (
+            <li key={index} className="flex items-start gap-2 text-sm text-foreground">
+              <CheckCircle className="w-4 h-4 text-[#22c55e] mt-0.5 flex-shrink-0" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* コンテンツ推奨事項 */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <Lightbulb className="w-4 h-4 text-[#f59e0b]" />
+          <h4 className="text-sm font-mono text-muted-foreground">コンテンツ最適化</h4>
+        </div>
+        <ul className="space-y-2">
+          {analysis.contentRecommendations.map((item, index) => (
+            <li key={index} className="flex items-start gap-2 text-sm text-foreground">
+              <AlertCircle className="w-4 h-4 text-[#f59e0b] mt-0.5 flex-shrink-0" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* 関連キーワード */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <TrendingUp className="w-4 h-4 text-[#8b5cf6]" />
+          <h4 className="text-sm font-mono text-muted-foreground">ターゲット推奨キーワード</h4>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {analysis.relatedKeywords.map((item, index) => (
+            <div key={index} className="p-3 rounded-lg bg-white/5 border border-border/50">
+              <p className="text-sm font-medium text-foreground">{item.keyword}</p>
+              <p className="text-xs text-muted-foreground mt-1">{item.reason}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 優先度と期待成果 */}
+      <div className="p-4 rounded-lg bg-[#8b5cf6]/10 border border-[#8b5cf6]/30">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-sm font-mono text-muted-foreground">優先度:</span>
+          <span className={cn(
+            "text-sm font-bold",
+            analysis.priority.level === "高" ? "text-[#ef4444]" :
+            analysis.priority.level === "中" ? "text-[#f59e0b]" :
+            "text-[#22c55e]"
+          )}>
+            {analysis.priority.level}
+          </span>
+        </div>
+        <p className="text-sm text-foreground mb-1">
+          <span className="text-muted-foreground">期待成果: </span>
+          {analysis.priority.expectedOutcome}
+        </p>
+        <p className="text-sm text-foreground">
+          <span className="text-muted-foreground">達成期間: </span>
+          {analysis.priority.timeframe}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+function KeywordDetailPanel({ 
+  keyword, 
+  onAnalyze,
+  isAnalyzing,
+}: { 
+  keyword: KeywordData | null;
+  onAnalyze: () => void;
+  isAnalyzing: boolean;
+}) {
   if (!keyword) {
     return (
       <div className="h-full flex items-center justify-center text-muted-foreground">
@@ -148,7 +335,7 @@ function KeywordDetailPanel({ keyword }: { keyword: KeywordData | null }) {
             {keyword.keyword}
           </h3>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span
             className={cn(
               "text-xs font-mono px-2 py-0.5 rounded uppercase",
@@ -173,6 +360,25 @@ function KeywordDetailPanel({ keyword }: { keyword: KeywordData | null }) {
           ))}
         </div>
       </div>
+
+      {/* AI Analysis Button */}
+      <Button
+        onClick={onAnalyze}
+        disabled={isAnalyzing}
+        className="w-full gap-2 bg-gradient-to-r from-[#8b5cf6] to-[#ec4899] hover:from-[#7c3aed] hover:to-[#db2777] text-white border-0"
+      >
+        {isAnalyzing ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            分析中...
+          </>
+        ) : (
+          <>
+            <Brain className="w-4 h-4" />
+            AI改善提案を取得
+          </>
+        )}
+      </Button>
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 gap-4">
@@ -325,10 +531,73 @@ function KeywordDetailPanel({ keyword }: { keyword: KeywordData | null }) {
 export default function KeywordIntelligence() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordData | null>(null);
+  const [aiAnalysis, setAiAnalysis] = useState<KeywordAnalysis | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const filteredKeywords = keywordData.filter((kw) =>
     kw.keyword.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const analyzeKeywordMutation = trpc.seo.analyzeKeyword.useMutation();
+  const exportCSVMutation = trpc.export.keywordsToCSV.useMutation();
+
+  const handleAnalyze = async () => {
+    if (!selectedKeyword) return;
+
+    setIsAnalyzing(true);
+    setAiAnalysis(null);
+
+    try {
+      const result = await analyzeKeywordMutation.mutateAsync({
+        keyword: selectedKeyword.keyword,
+        searchVolume: selectedKeyword.searchVolume,
+        keywordDifficulty: selectedKeyword.keywordDifficulty,
+        cpc: selectedKeyword.cpc,
+        aiVisibility: selectedKeyword.aiVisibility,
+        intent: selectedKeyword.intent,
+      });
+
+      if (result.success && result.analysis) {
+        setAiAnalysis(result.analysis as KeywordAnalysis);
+        toast.success("AI分析が完了しました");
+      } else {
+        toast.error("分析に失敗しました");
+      }
+    } catch (error) {
+      console.error("Analysis error:", error);
+      toast.error("分析中にエラーが発生しました");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const result = await exportCSVMutation.mutateAsync({
+        keywords: filteredKeywords.map(kw => ({
+          keyword: kw.keyword,
+          searchVolume: kw.searchVolume,
+          keywordDifficulty: kw.keywordDifficulty,
+          cpc: kw.cpc,
+          aiVisibility: kw.aiVisibility,
+          intent: kw.intent,
+        })),
+      });
+
+      // CSVをダウンロード
+      const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = result.filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+
+      toast.success("CSVエクスポートが完了しました");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("エクスポートに失敗しました");
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -388,9 +657,18 @@ export default function KeywordIntelligence() {
             <Filter className="w-4 h-4" />
             フィルター
           </Button>
-          <Button variant="outline" className="gap-2">
-            <Download className="w-4 h-4" />
-            エクスポート
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={handleExportCSV}
+            disabled={exportCSVMutation.isPending}
+          >
+            {exportCSVMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            CSVエクスポート
           </Button>
         </motion.div>
 
@@ -433,7 +711,10 @@ export default function KeywordIntelligence() {
                   {filteredKeywords.map((kw) => (
                     <tr
                       key={kw.id}
-                      onClick={() => setSelectedKeyword(kw)}
+                      onClick={() => {
+                        setSelectedKeyword(kw);
+                        setAiAnalysis(null);
+                      }}
                       className={cn(
                         "border-b border-border/30 cursor-pointer transition-colors",
                         selectedKeyword?.id === kw.id
@@ -499,9 +780,24 @@ export default function KeywordIntelligence() {
               border: "1px solid rgba(34, 211, 238, 0.2)",
             }}
           >
-            <KeywordDetailPanel keyword={selectedKeyword} />
+            <KeywordDetailPanel 
+              keyword={selectedKeyword} 
+              onAnalyze={handleAnalyze}
+              isAnalyzing={isAnalyzing}
+            />
           </motion.div>
         </div>
+
+        {/* AI Analysis Panel */}
+        <AnimatePresence>
+          {(aiAnalysis || isAnalyzing) && (
+            <AIAnalysisPanel
+              analysis={aiAnalysis}
+              isLoading={isAnalyzing}
+              onClose={() => setAiAnalysis(null)}
+            />
+          )}
+        </AnimatePresence>
       </motion.div>
     </DashboardLayout>
   );

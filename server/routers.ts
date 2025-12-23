@@ -4,6 +4,355 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { invokeLLM } from "./_core/llm";
+import { getDb } from "./db";
+import { trackedDomains, trackedKeywords, keywordHistory, domainHistory, pageSpeedHistory } from "../drizzle/schema";
+import { eq, and, desc } from "drizzle-orm";
+import {
+  getGoogleAuthUrl,
+  exchangeCodeForTokens,
+  saveGoogleTokens,
+  listSearchConsoleSites,
+  getValidAccessToken,
+  syncSearchConsoleData,
+} from "./services/googleSearchConsole";
+import {
+  fetchPageSpeedInsights,
+  analyzeAndSavePageSpeed,
+  syncPageSpeedData,
+  calculateAIReadabilityScore,
+} from "./services/pageSpeedInsights";
+
+// Google Search Console連携用のルーター
+const googleRouter = router({
+  // Google OAuth認証URLを取得
+  getAuthUrl: publicProcedure
+    .input(z.object({
+      redirectUri: z.string(),
+    }))
+    .query(({ input }) => {
+      try {
+        const authUrl = getGoogleAuthUrl(input.redirectUri);
+        return { success: true, authUrl };
+      } catch (error) {
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  // OAuth認証コードをトークンに交換
+  exchangeCode: publicProcedure
+    .input(z.object({
+      code: z.string(),
+      redirectUri: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        if (!ctx.user?.id) {
+          return { success: false, error: "ログインが必要です" };
+        }
+
+        const tokens = await exchangeCodeForTokens(input.code, input.redirectUri);
+        await saveGoogleTokens(
+          ctx.user.id,
+          tokens.access_token,
+          tokens.refresh_token || "",
+          tokens.expires_in
+        );
+
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  // Search Consoleのサイト一覧を取得
+  listSites: publicProcedure.query(async ({ ctx }) => {
+    try {
+      if (!ctx.user?.id) {
+        return { success: false, error: "ログインが必要です", sites: [] };
+      }
+
+      const accessToken = await getValidAccessToken(ctx.user.id);
+      const sites = await listSearchConsoleSites(accessToken);
+      return { success: true, sites };
+    } catch (error) {
+      return { success: false, error: String(error), sites: [] };
+    }
+  }),
+
+  // Search Consoleデータを同期
+  syncData: publicProcedure.mutation(async ({ ctx }) => {
+    try {
+      if (!ctx.user?.id) {
+        return { success: false, error: "ログインが必要です" };
+      }
+
+      const result = await syncSearchConsoleData(ctx.user.id);
+      return result;
+    } catch (error) {
+      return { success: false, error: String(error), domainsUpdated: 0, keywordsUpdated: 0 };
+    }
+  }),
+});
+
+// ドメイン管理用のルーター
+const domainsRouter = router({
+  // ドメインを追加
+  add: publicProcedure
+    .input(z.object({
+      domain: z.string(),
+      searchConsoleProperty: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        if (!ctx.user?.id) {
+          return { success: false, error: "ログインが必要です" };
+        }
+
+        const db = await getDb();
+        if (!db) return { success: false, error: "データベースに接続できません" };
+
+        const [inserted] = await db.insert(trackedDomains).values({
+          userId: ctx.user.id,
+          domain: input.domain,
+          searchConsoleProperty: input.searchConsoleProperty,
+        });
+
+        return { success: true, id: (inserted as any).insertId };
+      } catch (error) {
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  // ドメイン一覧を取得
+  list: publicProcedure.query(async ({ ctx }) => {
+    try {
+      if (!ctx.user?.id) {
+        return { success: false, domains: [] };
+      }
+
+      const db = await getDb();
+      if (!db) return { success: false, domains: [] };
+
+      const domains = await db.select().from(trackedDomains).where(eq(trackedDomains.userId, ctx.user.id));
+      return { success: true, domains };
+    } catch (error) {
+      return { success: false, domains: [], error: String(error) };
+    }
+  }),
+
+  // ドメインを削除
+  delete: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        if (!ctx.user?.id) {
+          return { success: false, error: "ログインが必要です" };
+        }
+
+        const db = await getDb();
+        if (!db) return { success: false, error: "データベースに接続できません" };
+
+        await db.delete(trackedDomains).where(
+          and(eq(trackedDomains.id, input.id), eq(trackedDomains.userId, ctx.user.id))
+        );
+
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  // ドメインの履歴データを取得
+  getHistory: publicProcedure
+    .input(z.object({ domainId: z.number(), limit: z.number().optional() }))
+    .query(async ({ input, ctx }) => {
+      try {
+        if (!ctx.user?.id) {
+          return { success: false, history: [] };
+        }
+
+        const db = await getDb();
+        if (!db) return { success: false, history: [] };
+
+        const history = await db
+          .select()
+          .from(domainHistory)
+          .where(eq(domainHistory.domainId, input.domainId))
+          .orderBy(desc(domainHistory.date))
+          .limit(input.limit || 30);
+
+        return { success: true, history };
+      } catch (error) {
+        return { success: false, history: [], error: String(error) };
+      }
+    }),
+});
+
+// キーワード管理用のルーター
+const keywordsRouter = router({
+  // キーワードを追加
+  add: publicProcedure
+    .input(z.object({
+      domainId: z.number(),
+      keyword: z.string(),
+      targetUrl: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        if (!ctx.user?.id) {
+          return { success: false, error: "ログインが必要です" };
+        }
+
+        const db = await getDb();
+        if (!db) return { success: false, error: "データベースに接続できません" };
+
+        const [inserted] = await db.insert(trackedKeywords).values({
+          userId: ctx.user.id,
+          domainId: input.domainId,
+          keyword: input.keyword,
+          targetUrl: input.targetUrl,
+        });
+
+        return { success: true, id: (inserted as any).insertId };
+      } catch (error) {
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  // キーワード一覧を取得
+  list: publicProcedure
+    .input(z.object({ domainId: z.number().optional() }))
+    .query(async ({ input, ctx }) => {
+      try {
+        if (!ctx.user?.id) {
+          return { success: false, keywords: [] };
+        }
+
+        const db = await getDb();
+        if (!db) return { success: false, keywords: [] };
+
+        let query = db.select().from(trackedKeywords).where(eq(trackedKeywords.userId, ctx.user.id));
+        
+        if (input.domainId) {
+          query = db.select().from(trackedKeywords).where(
+            and(eq(trackedKeywords.userId, ctx.user.id), eq(trackedKeywords.domainId, input.domainId))
+          );
+        }
+
+        const keywords = await query;
+        return { success: true, keywords };
+      } catch (error) {
+        return { success: false, keywords: [], error: String(error) };
+      }
+    }),
+
+  // キーワードを削除
+  delete: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        if (!ctx.user?.id) {
+          return { success: false, error: "ログインが必要です" };
+        }
+
+        const db = await getDb();
+        if (!db) return { success: false, error: "データベースに接続できません" };
+
+        await db.delete(trackedKeywords).where(
+          and(eq(trackedKeywords.id, input.id), eq(trackedKeywords.userId, ctx.user.id))
+        );
+
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  // キーワードの履歴データを取得
+  getHistory: publicProcedure
+    .input(z.object({ keywordId: z.number(), limit: z.number().optional() }))
+    .query(async ({ input }) => {
+      try {
+        const db = await getDb();
+        if (!db) return { success: false, history: [] };
+
+        const history = await db
+          .select()
+          .from(keywordHistory)
+          .where(eq(keywordHistory.keywordId, input.keywordId))
+          .orderBy(desc(keywordHistory.date))
+          .limit(input.limit || 30);
+
+        return { success: true, history };
+      } catch (error) {
+        return { success: false, history: [], error: String(error) };
+      }
+    }),
+});
+
+// PageSpeed分析用のルーター
+const pageSpeedRouter = router({
+  // URLを分析
+  analyze: publicProcedure
+    .input(z.object({
+      url: z.string(),
+      domainId: z.number().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const metrics = await fetchPageSpeedInsights(input.url);
+        const aiReadability = calculateAIReadabilityScore(metrics);
+
+        // domainIdがあればデータベースに保存
+        if (input.domainId) {
+          await analyzeAndSavePageSpeed(input.domainId, input.url);
+        }
+
+        return {
+          success: true,
+          metrics,
+          aiReadability,
+        };
+      } catch (error) {
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  // PageSpeed履歴を取得
+  getHistory: publicProcedure
+    .input(z.object({ domainId: z.number(), limit: z.number().optional() }))
+    .query(async ({ input }) => {
+      try {
+        const db = await getDb();
+        if (!db) return { success: false, history: [] };
+
+        const history = await db
+          .select()
+          .from(pageSpeedHistory)
+          .where(eq(pageSpeedHistory.domainId, input.domainId))
+          .orderBy(desc(pageSpeedHistory.date))
+          .limit(input.limit || 30);
+
+        return { success: true, history };
+      } catch (error) {
+        return { success: false, history: [], error: String(error) };
+      }
+    }),
+
+  // 全ドメインのPageSpeedを同期
+  syncAll: publicProcedure.mutation(async ({ ctx }) => {
+    try {
+      if (!ctx.user?.id) {
+        return { success: false, error: "ログインが必要です" };
+      }
+
+      const result = await syncPageSpeedData(ctx.user.id);
+      return result;
+    } catch (error) {
+      return { success: false, error: String(error), urlsAnalyzed: 0 };
+    }
+  }),
+});
 
 // SEO分析用のルーター
 const seoRouter = router({
@@ -296,17 +645,7 @@ AIセンチメント: ${input.aiSentiment}
               schema: {
                 type: "object",
                 properties: {
-                  summary: { type: "string", description: "順位パフォーマンスの総合評価（2-3文）" },
-                  currentPerformance: {
-                    type: "object",
-                    properties: {
-                      googleScore: { type: "string", description: "優秀/良好/要改善/危険" },
-                      aiScore: { type: "string", description: "優秀/良好/要改善/危険" },
-                      overallAssessment: { type: "string" },
-                    },
-                    required: ["googleScore", "aiScore", "overallAssessment"],
-                    additionalProperties: false,
-                  },
+                  summary: { type: "string", description: "現在の順位パフォーマンス評価（2-3文）" },
                   googleImprovements: {
                     type: "array",
                     items: { type: "string" },
@@ -333,7 +672,7 @@ AIセンチメント: ${input.aiSentiment}
                     additionalProperties: false,
                   },
                 },
-                required: ["summary", "currentPerformance", "googleImprovements", "aiCitationStrategy", "sentimentOptimization", "goals"],
+                required: ["summary", "googleImprovements", "aiCitationStrategy", "sentimentOptimization", "goals"],
                 additionalProperties: false,
               },
             },
@@ -352,7 +691,7 @@ AIセンチメント: ${input.aiSentiment}
     }),
 });
 
-// エクスポート用のルーター
+// CSVエクスポート用のルーター
 const exportRouter = router({
   // キーワードデータをCSV形式で生成
   keywordsToCSV: publicProcedure
@@ -386,7 +725,7 @@ const exportRouter = router({
           kw.intent,
         ].join(",");
       });
-      
+
       const csv = [headers.join(","), ...rows].join("\n");
       return { csv, filename: `keywords_export_${new Date().toISOString().split("T")[0]}.csv` };
     }),
@@ -497,6 +836,10 @@ export const appRouter = router({
       } as const;
     }),
   }),
+  google: googleRouter,
+  domains: domainsRouter,
+  keywords: keywordsRouter,
+  pageSpeed: pageSpeedRouter,
   seo: seoRouter,
   export: exportRouter,
 });

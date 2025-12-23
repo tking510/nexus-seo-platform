@@ -8,6 +8,8 @@ import Home from "./pages/Home";
 import KeywordIntelligence from "./pages/KeywordIntelligence";
 import DomainExplorer from "./pages/DomainExplorer";
 import RankTracking from "./pages/RankTracking";
+import Settings from "./pages/Settings";
+
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -16,6 +18,8 @@ function Router() {
       <Route path={"/keywords"} component={KeywordIntelligence} />
       <Route path={"/domains"} component={DomainExplorer} />
       <Route path={"/rank-tracking"} component={RankTracking} />
+      <Route path={"/settings"} component={Settings} />
+      <Route path={"/settings/google-callback"} component={Settings} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

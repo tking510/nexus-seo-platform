@@ -51,6 +51,12 @@ const navItems = [
     label: "順位トラッキング",
     description: "ハイブリッド監視",
   },
+  {
+    href: "/settings",
+    icon: Settings,
+    label: "設定",
+    description: "API連携 & 管理",
+  },
 ];
 
 const glassStyle = {
@@ -243,9 +249,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </button>
 
               {/* Settings */}
-              <button className="p-2 rounded-lg hover:bg-white/5 transition-colors">
-                <Settings className="w-5 h-5 text-muted-foreground" />
-              </button>
+              <Link href="/settings">
+                <button className="p-2 rounded-lg hover:bg-white/5 transition-colors">
+                  <Settings className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </Link>
 
               {/* User Avatar */}
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#8b5cf6] to-[#ec4899] flex items-center justify-center">

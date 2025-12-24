@@ -22,6 +22,14 @@ export interface DomainAnalysisResult {
     intent: string;
     difficulty: number;
   }>;
+  topPages: Array<{
+    url: string;
+    title: string;
+    estimatedTraffic: number;
+    topKeywords: string[];
+    seoScore: number;
+    contentType: string;
+  }>;
   competitors: Array<{
     domain: string;
     overlapScore: number;
@@ -135,6 +143,16 @@ ${siteContent.substring(0, 6000)}
       "difficulty": 45
     }
   ],
+  "topPages": [
+    {
+      "url": "/example-page",
+      "title": "ページタイトル",
+      "estimatedTraffic": 5000,
+      "topKeywords": ["キーワード1", "キーワード2"],
+      "seoScore": 85,
+      "contentType": "記事/商品ページ/カテゴリページ等"
+    }
+  ],
   "competitors": [
     {
       "domain": "competitor.com",
@@ -178,6 +196,8 @@ ${siteContent.substring(0, 6000)}
 3. サイトのコンテンツに基づいて、そのサイトが上位表示できそうなキーワードを推測してください
 4. 競合サイトは、同じ業界・トピックの実在するサイトを挙げてください
 5. 改善提案は具体的で実行可能なものにしてください
+6. topPagesには、SEOが強いと推測されるページを10件含めてください（URLはサイト構造から推測）
+7. 各ページには、そのページがターゲットとしているキーワードを含めてください
 
 JSONのみを出力してください。説明文は不要です。
 `;

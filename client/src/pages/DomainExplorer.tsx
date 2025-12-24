@@ -87,6 +87,14 @@ interface DomainAnalysisResult {
     intent: string;
     difficulty: number;
   }>;
+  topPages?: Array<{
+    url: string;
+    title: string;
+    estimatedTraffic: number;
+    topKeywords: string[];
+    seoScore: number;
+    contentType: string;
+  }>;
   competitors: Array<{
     domain: string;
     overlapScore: number;
@@ -378,6 +386,16 @@ export default function DomainExplorer() {
         volume: kw.searchVolume,
         rank: kw.estimatedRank,
         aiVisibility: kw.aiVisibility,
+        intent: kw.intent,
+        difficulty: kw.difficulty,
+      })),
+      topPages: (analysis.topPages || []).map(page => ({
+        url: page.url,
+        title: page.title,
+        estimatedTraffic: page.estimatedTraffic,
+        topKeywords: page.topKeywords,
+        seoScore: page.seoScore,
+        contentType: page.contentType,
       })),
       mainTopics: analysis.domainOverview.mainTopics,
       targetAudience: analysis.domainOverview.targetAudience,
@@ -843,8 +861,10 @@ export default function DomainExplorer() {
                   <thead>
                     <tr className="border-b border-border/50">
                       <th className="text-left py-3 text-xs font-mono text-muted-foreground">キーワード</th>
-                      <th className="text-center py-3 text-xs font-mono text-muted-foreground">推定検索ボリューム</th>
+                      <th className="text-center py-3 text-xs font-mono text-muted-foreground">検索ボリューム</th>
                       <th className="text-center py-3 text-xs font-mono text-muted-foreground">推定順位</th>
+                      <th className="text-center py-3 text-xs font-mono text-muted-foreground">難易度</th>
+                      <th className="text-center py-3 text-xs font-mono text-muted-foreground">検索意図</th>
                       <th className="text-center py-3 text-xs font-mono text-muted-foreground">AI可視性</th>
                     </tr>
                   </thead>
@@ -872,6 +892,21 @@ export default function DomainExplorer() {
                         <td className="py-3 text-center">
                           <span className={cn(
                             "text-sm font-mono px-2 py-0.5 rounded",
+                            kw.difficulty <= 30 ? "bg-[#22c55e]/20 text-[#22c55e]" :
+                            kw.difficulty <= 60 ? "bg-[#f59e0b]/20 text-[#f59e0b]" :
+                            "bg-[#ef4444]/20 text-[#ef4444]"
+                          )}>
+                            {kw.difficulty}
+                          </span>
+                        </td>
+                        <td className="py-3 text-center">
+                          <span className="text-xs font-mono text-muted-foreground px-2 py-0.5 rounded bg-white/5">
+                            {kw.intent}
+                          </span>
+                        </td>
+                        <td className="py-3 text-center">
+                          <span className={cn(
+                            "text-sm font-mono px-2 py-0.5 rounded",
                             kw.aiVisibility >= 80 ? "bg-[#22c55e]/20 text-[#22c55e]" :
                             kw.aiVisibility >= 60 ? "bg-[#22d3ee]/20 text-[#22d3ee]" :
                             "bg-[#f59e0b]/20 text-[#f59e0b]"
@@ -885,6 +920,82 @@ export default function DomainExplorer() {
                 </table>
               </div>
             </motion.div>
+
+            {/* Top Pages Section */}
+            {domainData.topPages && domainData.topPages.length > 0 && (
+              <motion.div
+                variants={itemVariants}
+                className="rounded-xl p-6"
+                style={{
+                  background: "linear-gradient(135deg, rgba(34, 211, 238, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)",
+                  border: "1px solid rgba(34, 211, 238, 0.2)",
+                }}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-[#22d3ee]" />
+                    <h2 className="text-lg font-display font-bold text-foreground">SEOが強いページ（AI推定）</h2>
+                  </div>
+                  <span className="text-xs text-muted-foreground font-mono">
+                    トラフィックを獲得していると推測されるページ
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border/50">
+                        <th className="text-left py-3 text-xs font-mono text-muted-foreground">ページ</th>
+                        <th className="text-center py-3 text-xs font-mono text-muted-foreground">推定トラフィック</th>
+                        <th className="text-center py-3 text-xs font-mono text-muted-foreground">SEOスコア</th>
+                        <th className="text-center py-3 text-xs font-mono text-muted-foreground">コンテンツタイプ</th>
+                        <th className="text-left py-3 text-xs font-mono text-muted-foreground">ターゲットキーワード</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {domainData.topPages.map((page, index) => (
+                        <tr key={index} className="border-b border-border/30 hover:bg-white/5 transition-colors">
+                          <td className="py-3">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-foreground">{page.title}</span>
+                              <span className="text-xs text-muted-foreground font-mono">{page.url}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 text-center">
+                            <span className="text-sm font-mono text-[#22d3ee]">
+                              {page.estimatedTraffic.toLocaleString()}
+                            </span>
+                          </td>
+                          <td className="py-3 text-center">
+                            <span className={cn(
+                              "text-sm font-mono px-2 py-0.5 rounded",
+                              page.seoScore >= 80 ? "bg-[#22c55e]/20 text-[#22c55e]" :
+                              page.seoScore >= 60 ? "bg-[#22d3ee]/20 text-[#22d3ee]" :
+                              "bg-[#f59e0b]/20 text-[#f59e0b]"
+                            )}>
+                              {page.seoScore}
+                            </span>
+                          </td>
+                          <td className="py-3 text-center">
+                            <span className="text-xs font-mono text-muted-foreground px-2 py-0.5 rounded bg-white/5">
+                              {page.contentType}
+                            </span>
+                          </td>
+                          <td className="py-3">
+                            <div className="flex flex-wrap gap-1">
+                              {page.topKeywords.slice(0, 3).map((keyword, i) => (
+                                <span key={i} className="text-xs px-2 py-0.5 rounded bg-[#8b5cf6]/20 text-[#8b5cf6]">
+                                  {keyword}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
+            )}
 
             {/* AI Readability & Backlinks Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

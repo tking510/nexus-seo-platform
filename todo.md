@@ -78,3 +78,12 @@
 - [x] 環境変数設定（自動設定）
 - [x] 動作確認
 - [x] 公開URL: https://nexus-seo-platform-production.up.railway.app
+
+## ページ別SEO分析と強いキーワード表示機能 - 2024/12/24
+
+- [x] AI分析APIを拡張してページ別SEO分析を追加
+- [x] 強いキーワードの詳細分析を追加
+- [x] フロントエンドUIにページ分析セクションを追加
+- [x] キーワード表示UIを強化
+- [ ] GitHubにプッシュ
+- [ ] Railwayで動作確認

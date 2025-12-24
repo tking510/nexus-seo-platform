@@ -57,9 +57,16 @@
 - [x] READMEの整備
 - [x] 環境変数の設定ガイド作成
 
-## Renderデプロイ - 2024/12/24
+## Renderデプロイ - 2024/12/24 (キャンセル - クレジットカード必要のため)
 
-- [ ] Render用設定ファイル（render.yaml）の作成
-- [ ] ビルドスクリプトの調整
-- [ ] GitHubにプッシュ
+- [x] Render用設定ファイル（render.yaml）の作成
+- [x] ビルドスクリプトの調整（PostgreSQL対応）
+- [x] GitHubにプッシュ
 - [ ] Renderでのデプロイ手順案内
+
+## Vercel + Supabaseデプロイ - 2024/12/24
+
+- [ ] SupabaseでPostgreSQLデータベース作成
+- [ ] VercelでWebサービスデプロイ
+- [ ] 環境変数の設定
+- [ ] 動作確認

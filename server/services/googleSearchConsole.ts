@@ -344,12 +344,12 @@ export async function syncSearchConsoleData(userId: number): Promise<{
             let keywordId: number;
 
             if (existingKeywords.length === 0) {
-              const [inserted] = await db.insert(trackedKeywords).values({
+              const inserted = await db.insert(trackedKeywords).values({
                 userId,
                 domainId: domain.id,
                 keyword,
-              });
-              keywordId = (inserted as any).insertId;
+              }).returning();
+              keywordId = inserted[0].id;
             } else {
               keywordId = existingKeywords[0].id;
             }

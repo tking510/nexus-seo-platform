@@ -117,13 +117,13 @@ const domainsRouter = router({
         const db = await getDb();
         if (!db) return { success: false, error: "データベースに接続できません" };
 
-        const [inserted] = await db.insert(trackedDomains).values({
+        const inserted = await db.insert(trackedDomains).values({
           userId: ctx.user.id,
           domain: input.domain,
           searchConsoleProperty: input.searchConsoleProperty,
-        });
+        }).returning();
 
-        return { success: true, id: (inserted as any).insertId };
+        return { success: true, id: inserted[0]?.id };
       } catch (error) {
         return { success: false, error: String(error) };
       }
@@ -212,14 +212,14 @@ const keywordsRouter = router({
         const db = await getDb();
         if (!db) return { success: false, error: "データベースに接続できません" };
 
-        const [inserted] = await db.insert(trackedKeywords).values({
+        const inserted = await db.insert(trackedKeywords).values({
           userId: ctx.user.id,
           domainId: input.domainId,
           keyword: input.keyword,
           targetUrl: input.targetUrl,
-        });
+        }).returning();
 
-        return { success: true, id: (inserted as any).insertId };
+        return { success: true, id: inserted[0]?.id };
       } catch (error) {
         return { success: false, error: String(error) };
       }

@@ -70,3 +70,11 @@
 - [ ] VercelでWebサービスデプロイ
 - [ ] 環境変数の設定
 - [ ] 動作確認
+
+## Railwayデプロイ（バックアップ用） - 2024/12/24
+
+- [x] Railway用設定ファイル追加
+- [x] Railwayでデプロイ
+- [x] 環境変数設定（自動設定）
+- [x] 動作確認
+- [x] 公開URL: https://nexus-seo-platform-production.up.railway.app
